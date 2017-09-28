@@ -1,0 +1,62 @@
+import networkx as nx  
+import matplotlib.pyplot as plt  
+from random import randint 
+import numpy as np
+
+def topology_generating(initial_graph):
+	try:
+		G.add_nodes_from([i for i in range(0,20)])
+		G.add_weighted_edges_from([[0,1,0.0],[0,2,0.0],[0,3,0.0],[0,4,0.0]])
+		G.add_weighted_edges_from([[1,5,0.0],[1,6,0.0],[1,7,0.0],[1,8,0.0]])
+		G.add_weighted_edges_from([[2,5,0.0],[2,6,0.0],[2,7,0.0],[2,8,0.0]])
+		G.add_weighted_edges_from([[3,5,0.0],[3,6,0.0],[3,7,0.0],[3,8,0.0]])
+		G.add_weighted_edges_from([[4,5,0.0],[4,6,0.0],[4,7,0.0],[4,8,0.0]])
+		G.add_weighted_edges_from([[5,9,0],[5,10,0],[5,11,0],[5,12,0],[5,13,0],[5,14,0],[5,15,0]])
+		G.add_weighted_edges_from([[6,9,0],[6,10,0],[6,11,0],[6,12,0],[6,13,0],[6,14,0],[6,15,0]])
+		G.add_weighted_edges_from([[7,9,0],[7,10,0],[7,11,0],[7,12,0],[7,13,0],[7,14,0],[7,15,0]])
+		G.add_weighted_edges_from([[8,9,0],[8,10,0],[8,11,0],[8,12,0],[8,13,0],[8,14,0],[8,15,0]])
+		G.add_weighted_edges_from([[9,16,0],[9,17,0],[9,18,0],[9,19,0],[9,20,0]])
+		G.add_weighted_edges_from([[10,16,0],[10,17,0],[10,18,0],[10,19,0]])
+		G.add_weighted_edges_from([[11,16,0],[11,17,0],[11,18,0],[11,19,0]])
+		G.add_weighted_edges_from([[12,16,0],[12,17,0],[12,18,0],[12,19,0]])
+		G.add_weighted_edges_from([[13,16,0],[13,17,0],[13,18,0],[13,19,0]])
+		G.add_weighted_edges_from([[14,16,0],[14,17,0],[14,18,0],[14,19,0]])
+		G.add_weighted_edges_from([[15,16,0],[15,17,0],[15,18,0],[15,19,0]])
+	except:
+		return 0
+	return 1
+
+
+
+
+G=nx.DiGraph()  
+topology_generating(G)
+infected_flag = [0 for i in range(0,20)]
+
+for i,j,k in G.edges(data=True):
+	G.add_weighted_edges_from([[i,j,np.random.gamma(2,3,1)[0]]])
+
+DAT_PATH = nx.shortest_path(G,source=0,weight="weight")
+DAT = nx.shortest_path_length(G,source=0,weight="weight")
+print(DAT)
+print(DAT_PATH)
+"""
+for (i,j,k) in G.edges(data=True):
+	print(i,"->",j,": ",k)
+"""	
+#nx.draw(G,pos=nx.spring_layout(G),with_labels=True,node_color='red')#按参数构图  
+#plt.axis('off')
+#plt.show()#显示图像
+
+
+Diffusion_Tree = nx.DiGraph()
+for node,value in DAT_PATH.items():
+	print(value)
+	for i in range(0,len(value)-1):
+		Diffusion_Tree.add_weighted_edges_from([[value[i],value[i+1],0]])
+
+nx.draw(Diffusion_Tree,pos=nx.spring_layout(Diffusion_Tree),with_labels=True,node_color='blue')#按参数构图  
+plt.axis('off')
+plt.show()#显示图像
+
+
