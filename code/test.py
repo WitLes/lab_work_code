@@ -1,15 +1,14 @@
-import numpy as np
+class Solution():
+    def reverse(x):
+        """
+        :type x: int
+        :rtype: int
+        """
+        if x >= 0:
+            if x < 10:
+                return x
+            num = int(str(x)[::-1])
+        else:
+            num = - int(str(x)[::-1])
+        return num *(num < 2**31)
 
-def read_workspace_dataset(file_name):
-    file = open(file_name,"r")
-    triple_dataspace_list = []
-    count = 0
-    for line in file.readlines():
-        triple_dataspace_list.append([int(x) for x in line.split(' ')])
-    standard_set = np.array(triple_dataspace_list)
-    standard_set = np.column_stack((standard_set[:,1],standard_set[:,2],standard_set[:,0]))
-    return standard_set
-
-
-data = read_workspace_dataset("dataset_workspace.dat")
-print(data)
