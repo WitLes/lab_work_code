@@ -1,14 +1,19 @@
 class Solution():
-    def reverse(x):
+    def maxSubArray(nums):
         """
-        :type x: int
+        :type nums: List[int]
         :rtype: int
         """
-        if x >= 0:
-            if x < 10:
-                return x
-            num = int(str(x)[::-1])
-        else:
-            num = - int(str(x)[::-1])
-        return num *(num < 2**31)
+        if not nums:
+            return 0
 
+        curSum = maxSum = nums[0]
+        for num in nums[1:]:
+            curSum = max(num, curSum + num)
+            maxSum = max(maxSum, curSum)
+
+        return maxSum
+
+a = [-2,1,-3,4,-1,2,1,-5,4]
+sum_a = Solution.maxSubArray(a)
+print(sum_a)

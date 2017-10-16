@@ -1,3 +1,7 @@
+#! /usr/bin/env python
+# -*- coding:utf-8 -*-
+# @aquamarine gy 2017.10.6
+
 import networkx as nx
 import matplotlib.pyplot as plt
 from random import randint
@@ -79,9 +83,10 @@ DAT_PATH = nx.shortest_path(G, source=0, weight="weight")
 DAT = nx.shortest_path_length(G, source=0, weight="weight")
 print(DAT)
 print(DAT_PATH)
+
 """
 for (i,j,k) in G.edges(data=True):
-	print(i,"->",j,": ",k)
+    print(i,"->",j,": ",k)
 """
 
 nx.draw_networkx(G, pos=pos_for_tree, with_labels=True, node_color='red')  # 按参数构图

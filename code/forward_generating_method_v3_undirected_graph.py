@@ -1,3 +1,8 @@
+#! usr/bin/env python
+# -*- coding: utf-8 -*-
+# @aquamarine gy 2017.10.7
+
+
 import networkx as nx
 import matplotlib.pyplot as plt
 import random
