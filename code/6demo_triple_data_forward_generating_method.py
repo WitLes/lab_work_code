@@ -174,6 +174,17 @@ def update_state():
     return True
 
 
+def dat2diffusion_tree_in_graph_tool(dat, source):
+    sorted_diffusion_node_dict = diffusion_class(dat,source)
+    diffusion_tree_in_graph_tool = Graph(directed=True)
+    diffusion_tree_in_graph_tool.add_vertex(10000)
+    for key, value in dat_path.items():
+        for i in range(len(value) - 1):
+            if diffusion_tree_in_graph_tool.edge(value[i], value[i + 1]) not in diffusion_tree_in_graph_tool.edges():
+                diffusion_tree_in_graph_tool.add_edge(value[i], value[i + 1])
+    return diffusion_tree_in_graph_tool
+
+
 source = 17
 
 '''
@@ -193,15 +204,9 @@ dat_path = find_path(parent_node_dict,source)
 '''
 
 
-sorted_diffusion_node_dict = diffusion_class(dat,source)
-diffusion_tree_in_graph_tool = Graph(directed=True)
-diffusion_tree_in_graph_tool.add_vertex(10000)
-for key, value in dat_path.items():
-    for i in range(len(value) - 1):
-        if diffusion_tree_in_graph_tool.edge(value[i], value[i + 1]) not in diffusion_tree_in_graph_tool.edges():
-            diffusion_tree_in_graph_tool.add_edge(value[i], value[i + 1])
 
-print(diffusion_tree_in_graph_tool)
+
+diffusion_tree_in_graph_tool = dat2diffusion_tree_in_graph_tool(dat. source)
 
 removed = diffusion_tree_in_graph_tool.new_vertex_property("bool")
 removed.a = False

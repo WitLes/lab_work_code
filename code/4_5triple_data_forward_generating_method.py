@@ -2,9 +2,7 @@
 # -*- coding: utf-8 -*-
 # @Aquamarine GY 2017.10.6
 
-'''
-Structure of top_dict:{node_1:{node_2:[Tn],node_3:[Tn]}, node2:{node1:[Tn],},node_3:{Tn}}
-'''
+
 import networkx as nx
 import matplotlib.pyplot as plt
 import random
@@ -129,31 +127,13 @@ dat_path = find_path(parent_node_dict, source)
 '''
 
 high_school_2013_data = read_high_school_2013_dataset("data/dataset_high_school_2013.csv")
-
 dat, parent_node_dict = triple_diffusing_method(high_school_2013_data,source)
 dat_path = find_path(parent_node_dict,source)
+print(len(dat))
 
 print("diffusion arrival time: ", dat)
+print("parent node of every single node: ", parent_node_dict)
+print("diffusion path: ", dat_path)
 count = 0
-
-
-
-infected_node_dict_and_parent = dict()
-infected_node_dict_and_time = dict()
-infected_node_dict_and_parent[source] = -2
-infected_node_dict_and_time[source] = 1385982020
-for triple in high_school_2013_data:
-    a = infected_node_dict_and_parent.__contains__(triple[0])
-    b = infected_node_dict_and_parent.__contains__(triple[1])
-    if a & (not b):
-        infected_node_dict_and_parent[triple[1]] = triple[0]
-        infected_node_dict_and_time[triple[1]] = triple[2]
-    if b & (not a):
-        infected_node_dict_and_parent[triple[0]] = triple[1]
-        infected_node_dict_and_time[triple[0]] = triple[2]
-dat_path1 = find_path(infected_node_dict_and_parent, source)
-print(infected_node_dict_and_time)
-print(len(infected_node_dict_and_time)," ",len(dat))
-for key, value in dat.items():
-    if not infected_node_dict_and_time[key] == value:
-        print("false:",key," ",value," ",infected_node_dict_and_time[key])
+for key, value in dat_path.items():
+    print(key, ":", value)

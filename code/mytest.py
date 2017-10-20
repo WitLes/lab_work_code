@@ -1,2 +1,6 @@
-a = [[1,2],1,2]
-print(len(a))
+a = [1,2,3]
+b = [4,5,3]
+sd = list()
+sd.append(a)
+sd.append(b)
+print(sd)
