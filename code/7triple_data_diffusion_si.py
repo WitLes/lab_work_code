@@ -14,7 +14,6 @@ a = np.array([[0, 1, 1], [1, 2, 2], [2, 3, 1], [2, 3, 3], [3, 4, 5], [1, 4, 2], 
 b = [[0, 5, 1], [5, 6, 2], [6, 4, 1], [6, 4, 3], [4, 2, 5], [5, 2, 2], [5, 1, 2], [1, 2, 3], [1, 3, 3]]
 
 
-
 def read_workspace_dataset(file_name):
     # 将workspace数据集的数据转化成(u,v,t)的三元组形式
     file = open(file_name, "r")
@@ -39,6 +38,62 @@ def read_high_school_2013_dataset(file_name):
     return standard_set
 
 
+def find_diffusion_sourve_arrival_time_in_method1(top_dict, source):
+    # 找到三元组生成的字典中，源节点的到达时间，也就是源节点第一次与别的节点交互的时间
+    time_list = list()
+    for key in top_dict[source].keys():
+        time_list.extend(top_dict[source][key])
+    min_time = min(time_list)
+    return min_time
+
+
+def triple_diffusing_method1(triples, diffusive_source):
+    # 输入三元组的集合和扩散源节点，输出所有节点的扩散到达时间，同时记录下来所有节点的传播父节点
+    # output { arrival_time：所有节点到达时间的字典 parent_node_dict：所有节点的传播父节点 }
+    print("start running...please wait...")
+    top_dict = {}
+    parent_node_dict = dict()
+    for triple in triples:  # 先确定节点
+        top_dict[triple[0]] = {}
+        top_dict[triple[1]] = {}
+    for triple in triples:  # 再确定连边
+        top_dict[triple[0]][triple[1]] = []
+        top_dict[triple[1]][triple[0]] = []
+    for triple in triples:  # 最后计入到达时间
+        top_dict[triple[0]][triple[1]].append(triple[2])
+        top_dict[triple[1]][triple[0]].append(triple[2])
+    # print(find_diffusion_sourve_arrival_time(top_dict,diffusive_source))
+    # 生成的top_dict包含所有的时间和节点信息
+    arrival_time = dict()
+    arrival_time[diffusive_source] = find_diffusion_sourve_arrival_time_in_method1(top_dict, diffusive_source)
+    diffuse_in_method1(top_dict, diffusive_source, arrival_time, parent_node_dict)
+    for key in top_dict.keys():
+        if not arrival_time.__contains__(key):
+            arrival_time[key] = -1
+    return arrival_time, parent_node_dict
+
+
+def diffuse_in_method1(top_dict, source_node, arrival_time, parent_node_dict):
+    # 从源节点开始，遍历其相邻的节点，如果相邻节点的到达时间中，有比扩散而来的节点的到达时间大的，就可以更新该节点的到达时间，
+    # 并递归地遍历该节点的下一个节点，如果到达没有被更新，也就不需要再继续递归
+    # print("now: ", source_node, "  arrival time: ", arrival_time[source_node])
+    for key, value in top_dict[source_node].items():
+        # print(key, value)
+        for time in value:
+            if time >= arrival_time[source_node]:
+                if arrival_time.__contains__(key):
+                    if time < arrival_time[key]:
+                        arrival_time[key] = time
+                        parent_node_dict[key] = source_node
+                        diffuse_in_method1(top_dict, key, arrival_time, parent_node_dict)
+                else:
+                    arrival_time[key] = time
+                    parent_node_dict[key] = source_node
+                    diffuse_in_method1(top_dict, key, arrival_time, parent_node_dict)
+
+    return True
+
+
 def find_path(parent_node_dict, source):
     # 计算所有节点的传播路径
     # input { parent_node_dict：所有节点的传播父节点的字典 source：扩散源节点 }
@@ -61,36 +116,161 @@ def find_path(parent_node_dict, source):
     return diffuse_path
 
 
+def find_diffusion_source_arrival_time_in_method2(sorted_triples, diffusive_source, directed=False):
+    if directed == False:
+        for item in sorted_triples:
+            if item[0] == diffusive_source or item[1] == diffusive_source:
+                return item[2]
+    else:
+        for item in sorted_triples:
+            if item[0] == diffusive_source:
+                return item[2]
+    pass
+
+
+def triple_diffusing_method2_oneStepEachTimestamp(sorted_triples, diffusive_source):
+    dat = dict()
+    infected_dict = dict()  # the dict consists of nodes which have been infected in the network.This dict is just an identification of infected nodes, and it's not used in diffusion process.
+    tempTimestamp_triples_list = list()  # This list is the set of all the edges at current time.
+    temp_time = find_diffusion_source_arrival_time_in_method2(sorted_triples,
+                                                              diffusive_source)  # A mark of current time.
+    dat[diffusive_source] = temp_time
+    count = 0
+    infected_dict[diffusive_source] = -2
+    triples_length = len(sorted_triples)
+    if temp_time > sorted_triples[0][2]:
+        while sorted_triples[count][2] < temp_time:
+            count += 1
+    while count < triples_length:
+        while count < triples_length and temp_time == sorted_triples[count][2]:
+            tempTimestamp_triples_list.append([sorted_triples[count][0], sorted_triples[count][1]])
+            count += 1
+        diffuse_in_method2_oneStep(tempTimestamp_triples_list, infected_dict, dat, temp_time)
+        tempTimestamp_triples_list = list()
+        if count < triples_length:
+            temp_time = sorted_triples[count][2]
+    return dat, infected_dict
+
+
+def diffuse_in_method2_oneStep(tempTimestamp_triples_list, infected_dict, dat, temp_time):
+    temp_infected_dict = dict()  # Add all the items in temp_dict to infected_dict and dat at the last step.
+    for item in tempTimestamp_triples_list:
+        has_v1 = item[0] in infected_dict
+        has_v2 = item[1] in infected_dict
+        if (not has_v1) and has_v2:
+            temp_infected_dict[item[0]] = item[1]
+            dat[item[0]] = temp_time
+        if has_v1 and (not has_v2):
+            temp_infected_dict[item[1]] = item[0]
+            dat[item[1]] = temp_time
+    infected_dict.update(temp_infected_dict)
+
+
+def diffuse_in_method2_multiStep(tempTimestamp_triples_list, infected_dict, dat, temp_time):
+    temp_infected_dict = dict()  # Add all the items in temp_dict to infected_dict and dat at the last step.
+    flag_count = 0
+    flag = 0
+    while flag_count != 0 or flag == 0:
+        # If there is no update in the flag list, there is no need to repeat the loop again.
+        temp_infected_dict = dict()
+        flag = 1
+        len_list = len(tempTimestamp_triples_list)
+        i = 0
+        flag_count = 0
+        while i < len_list:
+            has_v1 = tempTimestamp_triples_list[i][0] in infected_dict
+            has_v2 = tempTimestamp_triples_list[i][1] in infected_dict
+            if (not has_v1) and has_v2:
+                temp_infected_dict[tempTimestamp_triples_list[i][0]] = tempTimestamp_triples_list[i][1]
+                dat[tempTimestamp_triples_list[i][0]] = temp_time
+                tempTimestamp_triples_list.pop(i)
+                flag_count += 1
+                len_list -= 1
+            if has_v1 and (not has_v2):
+                temp_infected_dict[tempTimestamp_triples_list[i][1]] = tempTimestamp_triples_list[i][0]
+                dat[tempTimestamp_triples_list[i][1]] = temp_time
+                tempTimestamp_triples_list.pop(i)
+                flag_count += 1
+                len_list -= 1
+            i += 1
+        infected_dict.update(temp_infected_dict)
+
+
+def triple_diffusing_method2_multiStepEachTimestamp(sorted_triples, diffusive_source):
+    dat = dict()  # the first arrival time of each node.
+    infected_dict = dict()  # the dict consists of nodes which have been infected in the network.This dict is just an identification of infected nodes, and it's not used in diffusion process.
+    tempTimestamp_triples_list = list()  # This list contains all the edges at current time.
+    temp_time = find_diffusion_source_arrival_time_in_method2(sorted_triples,
+                                                              diffusive_source)  # A mark of current time.
+    dat[diffusive_source] = temp_time
+    count = 0
+    infected_dict[diffusive_source] = -2
+    triples_length = len(sorted_triples)
+    if temp_time > sorted_triples[0][2]:
+        while sorted_triples[count][2] < temp_time:
+            count += 1
+    while count < triples_length:
+        while count < triples_length and temp_time == sorted_triples[count][2]:
+            tempTimestamp_triples_list.append([sorted_triples[count][0], sorted_triples[count][1]])
+            count += 1
+        diffuse_in_method2_multiStep(tempTimestamp_triples_list, infected_dict, dat, temp_time)
+        tempTimestamp_triples_list = list()
+        if count < triples_length:
+            temp_time = sorted_triples[count][2]
+    return dat, infected_dict
+
+
+def is_two_dat_equal(dat1, dat2):
+    list_diff = list()
+    for key, value in dat1.items():
+        if not dat2[key] == value:
+            list_diff.append([key, value, dat2[key]])
+    if len(list_diff) == 0:
+        return True, list_diff
+    else:
+        return False, list_diff
+
+
+def is_two_dat_path_equal(dat_path1, dat_path2):
+    flag = True
+    list_diff = list()
+    for key, value in dat_path1.items():
+        if not dat_path2[key] == value:
+            list_diff.append([key, value, dat_path2[key]])
+            flag = False
+            break
+    return flag, list_diff
+
 recovery_rate = 0
 diffusive_rate = 0.8
-source = 17
+source = 1
 
 '''
 dat,parent_node_dict= triple_diffusing_method(a,source)
 dat_path = find_path(parent_node_dict,source)
 '''
 
-work_space_data = read_workspace_dataset("data/dataset_workspace.dat")
+'''
+data = read_workspace_dataset("data/dataset_workspace.dat")
+dat, parent_node_dict = triple_diffusing_method2_multiStepEachTimestamp(data, source)
+dat_path = find_path(parent_node_dict, source)
+'''
 
-infected_node_dict_and_parent = dict()
-infected_node_dict_and_time = dict()
-infected_node_dict_and_parent[source] = -2
-infected_node_dict_and_time[source] = 0
-for triple in work_space_data:
-    a = infected_node_dict_and_parent.__contains__(triple[0])
-    b = infected_node_dict_and_parent.__contains__(triple[1])
-    if a & (not b):
-        if random.random() > diffusive_rate:
-            infected_node_dict_and_parent[triple[1]] = triple[0]
-            infected_node_dict_and_time[triple[1]] = triple[2]
-    if b & (not a):
-        if random.random() > diffusive_rate:
-            infected_node_dict_and_parent[triple[0]] = triple[1]
-            infected_node_dict_and_time[triple[0]] = triple[2]
-dat_path = find_path(infected_node_dict_and_parent, source)
-print(infected_node_dict_and_parent)
-print(dat_path)
+data = read_high_school_2013_dataset("data/dataset_high_school_2013.csv")
+dat, parent_node_dict = triple_diffusing_method1(data,source)
+dat_path = find_path(parent_node_dict,source)
 
+print(dat)
 
-    
+print(find_diffusion_source_arrival_time_in_method2(data, source))
 
+a, dat_parent = triple_diffusing_method2_multiStepEachTimestamp(data, source)
+print(a)
+
+judging, li = is_two_dat_equal(dat, a)
+print(judging)
+print(li)
+dat_path1 = find_path(dat_parent, source)
+judging, li = is_two_dat_path_equal(dat_path, dat_path1)
+print(judging)
+print(li)

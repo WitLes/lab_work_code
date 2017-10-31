@@ -1,6 +1,5 @@
-a = [1,2,3]
-b = [4,5,3]
-sd = list()
-sd.append(a)
-sd.append(b)
-print(sd)
+a = [1,2,3,4]
+b = a
+
+b[2] = 6
+print(a,b)

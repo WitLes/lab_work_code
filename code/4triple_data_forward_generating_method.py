@@ -134,26 +134,3 @@ dat, parent_node_dict = triple_diffusing_method(high_school_2013_data,source)
 dat_path = find_path(parent_node_dict,source)
 
 print("diffusion arrival time: ", dat)
-count = 0
-
-
-
-infected_node_dict_and_parent = dict()
-infected_node_dict_and_time = dict()
-infected_node_dict_and_parent[source] = -2
-infected_node_dict_and_time[source] = 1385982020
-for triple in high_school_2013_data:
-    a = infected_node_dict_and_parent.__contains__(triple[0])
-    b = infected_node_dict_and_parent.__contains__(triple[1])
-    if a & (not b):
-        infected_node_dict_and_parent[triple[1]] = triple[0]
-        infected_node_dict_and_time[triple[1]] = triple[2]
-    if b & (not a):
-        infected_node_dict_and_parent[triple[0]] = triple[1]
-        infected_node_dict_and_time[triple[0]] = triple[2]
-dat_path1 = find_path(infected_node_dict_and_parent, source)
-print(infected_node_dict_and_time)
-print(len(infected_node_dict_and_time)," ",len(dat))
-for key, value in dat.items():
-    if not infected_node_dict_and_time[key] == value:
-        print("false:",key," ",value," ",infected_node_dict_and_time[key])
