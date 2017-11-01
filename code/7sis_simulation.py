@@ -10,9 +10,6 @@ import matplotlib.pyplot as plt
 import random
 import numpy as np
 
-a = np.array([[0, 1, 1], [1, 2, 2], [2, 3, 1], [2, 3, 3], [3, 4, 5], [1, 4, 2], [4, 5, 3], [1, 5, 2], [5, 6, 2]])
-b = [[0, 5, 1], [5, 6, 2], [6, 4, 1], [6, 4, 3], [4, 2, 5], [5, 2, 2], [5, 1, 2], [1, 2, 3], [1, 3, 3]]
-
 
 def read_workspace_dataset(file_name):
     # 将workspace数据集的数据转化成(u,v,t)的三元组形式
@@ -249,28 +246,28 @@ def is_two_dat_path_equal(dat_path1, dat_path2):
     return flag, list_diff
 
 
-source = 1
+def triple_diffusion_method_using_timeslice_oneStep(sorted_triples,diffusive_source,data_circle=1):
+    vertex_state = dict()
 
-'''
-dat,parent_node_dict= triple_diffusing_method(a,source)
-dat_path = find_path(parent_node_dict,source)
-'''
+    pass
 
-'''
+def triples_time_slice(sorted_triples):
+    # the structure of the slice:[[triples of t1],[triples of t2]...]
+    temp_time = sorted_triples[0][2]
+    cur_list = list()
+    slice_list = list()
+    for item in sorted_triples:
+        if item[2] == temp_time:
+            cur_list.append(list(item))
+        else:
+            temp_time = item[2]
+            if len(cur_list) > 0:
+                slice_list.append(cur_list)
+                cur_list = list()
+    return slice_list
+
+
 data = read_workspace_dataset("data/dataset_workspace.dat")
-dat, parent_node_dict = triple_diffusing_method2_multiStepEachTimestamp(data, source)
-dat_path = find_path(parent_node_dict, source)
-'''
 
-data = read_high_school_2013_dataset("data/dataset_high_school_2013.csv")
-dat, parent_node_dict = triple_diffusing_method1(data,source)
-dat_path = find_path(parent_node_dict,source)
-
-print(dat)
-
-print(find_diffusion_source_arrival_time_in_method2(data, source))
-
-a, dat_parent = triple_diffusing_method2_oneStepEachTimestamp(data, source, beta=1,r=0)
-print(a)
-
-
+slice1 = triples_time_slice(data)
+print(slice1)
