@@ -14,7 +14,7 @@
       <file leaf-file-name="7triple_data_diffusion_si.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/code/7triple_data_diffusion_si.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="203">
+            <state relative-caret-position="452">
               <caret line="259" column="0" lean-forward="false" selection-start-line="259" selection-start-column="0" selection-end-line="261" selection-end-column="46" />
               <folding>
                 <element signature="e#173#194#0" expanded="true" />
@@ -94,7 +94,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="Scratches" />
       <pane id="ProjectPane">
         <subPane>
@@ -129,6 +128,7 @@
           <select />
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -296,6 +296,37 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/code/7triple_data_diffusion_si.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding>
+            <element signature="e#173#194#0" expanded="true" />
+            <element signature="e#524#899#0" expanded="false" />
+            <element signature="e#952#1388#0" expanded="false" />
+            <element signature="e#1464#1667#0" expanded="false" />
+            <element signature="e#1731#2800#0" expanded="false" />
+            <element signature="e#2886#3755#0" expanded="false" />
+            <element signature="e#3803#4480#0" expanded="false" />
+            <element signature="e#4588#4872#0" expanded="false" />
+            <element signature="e#5947#6370#0" expanded="false" />
+            <element signature="e#6505#7325#0" expanded="false" />
+            <element signature="e#7425#8717#0" expanded="false" />
+            <element signature="e#8811#10074#0" expanded="false" />
+            <element signature="e#10115#10359#0" expanded="false" />
+            <element signature="e#10415#10641#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/code/4triple_data_forward_generating_method.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2185">
+          <caret line="118" column="10" lean-forward="false" selection-start-line="118" selection-start-column="10" selection-end-line="118" selection-end-column="10" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/code/7triple_data_diffusion_si.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
@@ -646,7 +677,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/code/7triple_data_diffusion_si.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="203">
+        <state relative-caret-position="452">
           <caret line="259" column="0" lean-forward="false" selection-start-line="259" selection-start-column="0" selection-end-line="261" selection-end-column="46" />
           <folding>
             <element signature="e#173#194#0" expanded="true" />
