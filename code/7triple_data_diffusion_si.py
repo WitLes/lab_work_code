@@ -1,6 +1,6 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Aquamarine GY 2017.10.6
+# @Aquamarine GY 2017.10.30
 
 '''
 Structure of top_dict:{node_1:{node_2:[Tn],node_3:[Tn]}, node2:{node1:[Tn],},node_3:{Tn}}

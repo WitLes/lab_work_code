@@ -1,6 +1,6 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Aquamarine GY 2017.10.6
+# @Aquamarine GY 2017.11.1
 
 '''
 Structure of top_dict:{node_1:{node_2:[Tn],node_3:[Tn]}, node2:{node1:[Tn],},node_3:{Tn}}
@@ -124,7 +124,7 @@ def find_diffusion_source_arrival_time_in_method2(sorted_triples, diffusive_sour
                 return item[2]
 
 
-def triple_diffusing_method2_oneStepEachTimestamp(sorted_triples, diffusive_source,beta=1,r=0):
+def triple_diffusing_method2_oneStepEachTimestamp(sorted_triples, diffusive_source, beta=1, r=0):
     # This function uses the time consequence of triples to calculate the arrival time and path with out generating a graph(dict).
     dat = dict()
     infected_dict = dict()  # the dict consists of nodes which have been infected in the network.This dict is just an identification of infected nodes, and it's not used in diffusion process.
@@ -143,14 +143,14 @@ def triple_diffusing_method2_oneStepEachTimestamp(sorted_triples, diffusive_sour
         while count < triples_length and temp_time == sorted_triples[count][2]:
             tempTimestamp_triples_list.append([sorted_triples[count][0], sorted_triples[count][1]])
             count += 1
-        diffuse_in_method2_oneStep(tempTimestamp_triples_list, infected_dict, dat, temp_time,beta,r)
+        diffuse_in_method2_oneStep(tempTimestamp_triples_list, infected_dict, dat, temp_time, beta, r)
         tempTimestamp_triples_list = list()
         if count < triples_length:
             temp_time = sorted_triples[count][2]
     return dat, infected_dict
 
 
-def diffuse_in_method2_oneStep(tempTimestamp_triples_list, infected_dict, dat, temp_time,beta,r):
+def diffuse_in_method2_oneStep(tempTimestamp_triples_list, infected_dict, dat, temp_time, beta, r):
     temp_infected_dict = dict()  # Add all the items in temp_dict to infected_dict and dat at the last step.
     for item in tempTimestamp_triples_list:
         has_v1 = item[0] in infected_dict
@@ -168,7 +168,7 @@ def diffuse_in_method2_oneStep(tempTimestamp_triples_list, infected_dict, dat, t
         if random.random() < r:
             infected_dict.pop(item[0])
     infected_dict.update(temp_infected_dict)
-   # print(infected_dict)
+    # print(infected_dict)
 
 
 def diffuse_in_method2_multiStep(tempTimestamp_triples_list, infected_dict, dat, temp_time):
@@ -246,28 +246,111 @@ def is_two_dat_path_equal(dat_path1, dat_path2):
     return flag, list_diff
 
 
-def triple_diffusion_method_using_timeslice_oneStep(sorted_triples,diffusive_source,data_circle=1):
-    vertex_state = dict()
-
-    pass
-
 def triples_time_slice(sorted_triples):
-    # the structure of the slice:[[triples of t1],[triples of t2]...]
+    # the structure of the slice:{t1:[[],[],[],...],t2:[[],[],...],...}
     temp_time = sorted_triples[0][2]
     cur_list = list()
-    slice_list = list()
+    slice_dict = dict()
     for item in sorted_triples:
         if item[2] == temp_time:
             cur_list.append(list(item))
         else:
-            temp_time = item[2]
             if len(cur_list) > 0:
-                slice_list.append(cur_list)
-                cur_list = list()
-    return slice_list
+                slice_dict[temp_time] = cur_list
+            cur_list = list()
+            cur_list.append(list(item))
+            temp_time = item[2]
+    if len(cur_list) > 0:
+        for i in cur_list:
+            slice_dict[i[2]] = [i]
+    return slice_dict
+
+
+def calculate_startTime_endTime_timeWindowLength(sorted_triples):
+    # return start_time, end_time, time_interval, time_window_length
+    start_time = sorted_triples[0][2]
+    end_time = sorted_triples[-1][2]
+    time_window_length = end_time - start_time
+    return start_time, end_time, time_window_length
+
+
+def duplicate_triples(sorted_triples, repeat=1):
+    sorted_triples = list(sorted_triples)
+    if repeat == 1:
+        return sorted_triples
+    else:
+        pass
+
+
+def sis_simulation_method_oneStep(sorted_triples, diffusive_source, min_time_interval, beta=1, recover_rate=0.0001,
+                                  repeat=1):
+    sorted_triples = duplicate_triples(sorted_triples, repeat=1)
+    slice_dict = triples_time_slice(sorted_triples)
+    start_time, end_time, time_window_length = calculate_startTime_endTime_timeWindowLength(data)
+    node_state_dict = dict()  # indicate the state of each node
+    infected_node_dict = dict()  # a dict of infected nodes, for the convenience of searching (s,i) pairs.
+    node_infected_count_dict = dict()  # the number of each node's infection in the whole time line.
+    edge_diffusion_count_dict = dict()  # the number of each edge's infection, that means how many times does each edge diffuse virus.
+    #  calculate the occurrence frequency of each edge.
+    #  It measures the importance of each edge in the graph while diffusing.
+    for item in sorted_triples:  # nodes of the graph
+        node_state_dict[item[0]] = 0
+        node_state_dict[item[1]] = 0
+        node_infected_count_dict[item[0]] = 0
+        node_infected_count_dict[item[1]] = 0
+    node_state_dict[diffusive_source] = 1
+    infected_node_dict[diffusive_source] = 1
+    node_infected_count_dict[diffusive_source] += 1
+    # initiate the vertex state, the slice of triples by different time.
+    # while running the diffusion process in time order, just update the state of each node.
+    # The animation just need the states of nodes in each time step.Then we can show the pictures in time ascending order.
+    temp_time = start_time
+    # print(slice_dict)
+    while temp_time <= end_time:
+        if temp_time in slice_dict:
+            sis_diffuse(slice_dict[temp_time], infected_node_dict, node_state_dict, node_infected_count_dict, beta)
+            # if there are some triples in the current time, just run the diffusion process at a probability beta.
+            # The input are triples at current time,node state dict and diffusion rate beta.
+
+        sis_recover(node_state_dict, infected_node_dict, recover_rate)
+        # Every single time step there is a recover rate for each infected node.
+        temp_time += min_time_interval
+
+    print(node_infected_count_dict)
+
+
+def sis_diffuse(temp_time_data_list, infected_node_dict, node_state_dict, node_infected_count_dict, beta):
+    temp_record_dict = dict()
+    # Use a temp dict to record the new infected node in the current time step.
+    # Avoiding multi infection in a single path at a single time step.
+    # For example, if nodeA was infected at time t1. And in the next iteration, nodeB was also infected by nodeA at time t1.
+    # But this situation is not allowed in our algorithm.
+    for item in temp_time_data_list:
+        if (item[0] in infected_node_dict) and (item[1] not in infected_node_dict):
+            if random.random() < beta:
+                temp_record_dict[item[1]] = item[2]
+                print("infected: ", item[1], "time: ", item[2])
+                continue
+        if (item[1] in infected_node_dict) and (item[0] not in infected_node_dict):
+            if random.random() < beta:
+                temp_record_dict[item[0]] = item[2]
+                print("infected: ", item[0], "time: ", item[2])
+                continue
+    for key in temp_record_dict.keys():
+        infected_node_dict[key] = 1
+        node_state_dict[key] = 1
+        node_infected_count_dict[key] += 1
+
+
+def sis_recover(node_state_dict, infected_node_dict, recover_rate):
+    copy_infected_dict = dict(infected_node_dict)
+    for key, value in copy_infected_dict.items():
+        if random.random() < recover_rate:
+            recover_node = key
+            infected_node_dict.pop(key)
+            print("recover: ", recover_node)
 
 
 data = read_workspace_dataset("data/dataset_workspace.dat")
 
-slice1 = triples_time_slice(data)
-print(slice1)
+sis_simulation_method_oneStep(data, 17, 20)
