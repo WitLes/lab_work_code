@@ -106,6 +106,7 @@ nx.draw_networkx(sample_graph, pos=nx.spring_layout(sample_graph), node_size=4, 
 G = nx.Graph()  # 初始化
 G = weighted_graph_generator(G, sample_graph)  # 将样本重构成有向有权图
 draw_graph(G, type=0)
+print(G.edges(data=True))
 DAT_PATH, DAT = calculate_diffusive_arrival_times(G, diffusive_source)
 # 扩散过程的可视化
 draw_diffusion_tree(DAT_PATH)  # 绘制扩散路径图

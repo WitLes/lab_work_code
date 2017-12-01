@@ -5,7 +5,7 @@ import math
 from numpy.linalg import cholesky
 import matplotlib.pyplot as plt
 
-sampleNo = 10000
+sampleNo = 100
 # 一维正态分布
 # 下面三种方式是等效的
 rand_a = np.random.rand(10)
@@ -16,7 +16,8 @@ s = np.random.normal(mu, sigma, sampleNo)
 print(s)
 plt.subplot(121)  # 1行 2列 第一个
 plt.hist(s, 50, normed=True)
-
+plt.show()
+"""
 # 二维正态分布
 mu = np.array([[1, 5]])
 Sigma = np.array([[1, 0.5], [1.5, 3]])
@@ -40,3 +41,4 @@ fig = plt.figure()
 ax = fig.add_subplot(111)
 ax.hist(result1, bins=100)
 plt.show()
+"""
