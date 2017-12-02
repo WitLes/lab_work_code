@@ -4,7 +4,6 @@ import random
 import time
 import matplotlib.pyplot as plt
 import sympy as sp
-import sympy as sp
 from sympy.abc import a,x,y
 
 
@@ -19,6 +18,7 @@ def er_graph_generator(node_number=100, link_probability=0.06,seed=None, directe
 	node_number = len(weighted_er_graph.nodes())
 	edge_number = len(weighted_er_graph.edges())
 	return weighted_er_graph,node_number,edge_number
+
 
 def DAT_generator(graph_topology,wtd_array,diffusive_source):
 	# This function returns the node arrival times of the (topology,waiting time distribution) by sampling from a gauss distribution.
@@ -72,10 +72,53 @@ def draw_diffusion_tree(diffusive_arrival_times, type=0):
 	nx.draw_networkx(Diffusion_Tree, pos, with_labels=True, node_color='blue', node_size=4)  # 按参数构图
 	return Diffusion_Tree
 
+def find_possible_edges_from_dats(dats):
+	node_list_sum = list()
+	node_list = list()
+	edges_set = set()
+	# select the first dat to select all the possile edges.Then use all the residual dats to restrict the possible edges.:
+	for i in range(len(dats)):
+		sorted_dat = sorted(dats[i].items(),key=lambda x:x[1])
+		for (node, time) in sorted_dat:
+			node_list.append(node)
+		temp_edges = find_ordered_tuples_in_list(node_list)
+		node_list = []
+		for edge in temp_edges:
+			edges_set.add(edge)
 
-def mcmc_algorithm_with_gibbs_sampling(discrete_wtd,dats):
+	return list(edges_set)
+
+
+def generate_all_edges(graph):
+	# IMPORTANT!! THE input graph must be a networkx graph.
+	nodes = list()
+	number = len(nodes)
+	edges_list = []
+	for node in graph.nodes():
+		nodes.append(node)
+	for i in range(number):
+		for j in range(number):
+			if i != j:
+				edges_list.append((i,j))
+	return edges_list
+
+
+
+
+def find_ordered_tuples_in_list(list_in):
+	length = len(list_in)
+	possible_edges = list()
+	for i in range(length):
+		for j in range(i+1, length):
+			possible_edges.append((list_in[i],list_in[j]))
+	return possible_edges
+
+def mcmc_algorithm_with_gibbs_sampling(graph,discrete_wtd,dats):
+	edges = generate_all_edges(graph)
 	burn_in = 10
 	max_lag = 10
+	survival_f = pdf2sf(discrete_wtd)
+	hazard_f = pdf_sf2hazard(discrete_wtd, survival_f)
 	M_sample_size = 30
 	graph_samples = list()
 	survival_func = pdf2sf(discrete_wtd)
@@ -101,8 +144,21 @@ def mcmc_algorithm_with_gibbs_sampling(discrete_wtd,dats):
 	return graph_samples
 
 
-def pdf2sf():
-	pass
+def pdf2sf(discrete_wtd):
+	sum_mass = sum(discrete_wtd)
+	sf = list()
+	sf.append(sum_mass)
+	for i in range(1,len(discrete_wtd)):
+		point_value = sum_mass - sum(discrete_wtd[0:i])
+		sf.append(point_value)
+	return sf
+
+
+def pdf_sf2hazard(discrete_wtd,survival_function):
+	hazard_function = []
+	for i in range(len(discrete_wtd)):
+		hazard_function.append(discrete_wtd[i]/survival_function[i])
+	return hazard_function
 
 
 def continuous_exp_distribution2discrete(delta,l_t,miu=1):
@@ -125,17 +181,20 @@ def continuous_exp_distribution2discrete(delta,l_t,miu=1):
 	return discrete_wtd, discrete_mass
 
 
-def scatter_wtd(discrete_wtd):
-	plt.scatter([i for i in range(len(discrete_wtd))],discrete_wtd)
+def scatter_wtd(f):
+	plt.scatter([i for i in range(len(f))], f)
 	plt.show()
 
 
 er_graph, node_number, edge_number = er_graph_generator(100,0.06,seed=0,directed=False)
+generate_all_edges(er_graph)
+dats, dat_path = dats_generator(er_graph,dat_number=10,seed=True)
 
-dats,dat_path = dats_generator(er_graph,dat_number=1,seed=True)
+'''
+discrete_wtd,discrete_mass = continuous_exp_distribution2discrete(0.1,5)
+survival_f = pdf2sf(discrete_wtd)
+hazard_f = pdf_sf2hazard(discrete_wtd, survival_f)
+scatter_wtd(hazard_f)
 
-discrete_wtd,discrete_mass = continuous_exp_distribution2discrete(0.01,5)
-scatter_wtd(discrete_wtd)
 
-
-
+'''

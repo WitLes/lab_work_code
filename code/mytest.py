@@ -3,7 +3,6 @@ import networkx as nx
 import sympy as sp
 from sympy.abc import a,x,y
 
-b = 0
-
-a = b/2 if b!=0 else 0
-print(a)
+a = {(1,2):2,(2,3):3}
+if (1,4) in a:
+    print("yes")
