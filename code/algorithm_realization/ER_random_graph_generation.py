@@ -185,7 +185,7 @@ def calculate_gain_del(edge, dats, lambda_dict_list, survival_func, hazard_f, de
 
         # case 3
         elif d_uv_index > max_index:
-            adder = float(9999)
+            adder = float(99999)
 
         # cumulation
         gain += adder
@@ -226,10 +226,11 @@ def calculate_gain_add(edge, dats, lambda_dict_list, survival_func, hazard_f, de
 
         # case 3
         elif d_uv_index > max_index:
-            adder = float(-9999)
+            adder = float(-99999)
 
         # cumulation
         gain += adder
+
     #print(gain)
     return gain
 
@@ -251,6 +252,8 @@ def renew_lambda_del(edge, dats, lambda_dict_list, survival_func, hazard_f, delt
         # case 1: valid time interval
         if 0 < d_uv_index < max_index:
             lambda_i_v = (lambda_i_v - hazard_f[d_uv_index]) / (1 - hazard_f[d_uv_index] * delta)
+            #print("del:",lambda_i_v,"  d_uv_index: ", d_uv_index)
+            #time.sleep(1)
 
         # case 2: d_uv < 0
         elif d_uv_index <= 0:
@@ -284,7 +287,8 @@ def renew_lambda_add(edge, dats, lambda_dict_list, survival_func, hazard_f, delt
         if 0 < d_uv_index < max_index:
             d_uv_index = int((t_v - t_u) / delta)
             lambda_i_v = (1 - hazard_f[d_uv_index] * delta) * lambda_i_v + hazard_f[d_uv_index]
-
+            #print("add:", lambda_i_v)
+            #time.sleep(1)
 
         # case 2:d_uv < 0
         elif d_uv_index <= 0:
@@ -330,12 +334,10 @@ def mcmc_algorithm_with_gibbs_sampling(input_graph, discrete_wtd,discrete_mass,d
 
     # discrete wtd,survival f and hazard f
     survival_f = pdf2sf(discrete_mass)
-    scatter_wtd(survival_f)
-    hazard_f = pdf_sf2hazard(discrete_wtd, survival_f)
+    hazard_f = sf2hazard(survival_f)
     #scatter_wtd(hazard_f)
 
-    hazard_func = list(map(lambda x: x[0] / x[1], zip(discrete_wtd, survival_f)))
-    scatter_wtd(hazard_func)
+    #hazard_func = list(map(lambda x: x[0] / x[1], zip(discrete_wtd, survival_f)))
     #print(len(hazard_f))
     # the final output: M sample graphs list
     graph_samples = list()
@@ -494,6 +496,13 @@ def continuous_gaussian_distribution2discrete_using_integration(delta, l_t, miu=
     # discrete_mass is the list of mass of each small section.
     return discrete_wtd, discrete_mass
 
+def sf2hazard(sf):
+    hazard = list()
+    hazard.append(0)
+    for i in range(1, len(sf)):
+        haz = 1 - sf[i] /sf[i-1]
+        hazard.append(haz)
+    return hazard
 
 def scatter_wtd(f):
     plt.scatter([i for i in range(len(f))], f)
@@ -504,6 +513,13 @@ er_graph, node_number, edge_number = er_graph_generator(80, 0.06, seed=0, direct
 dats, dat_path = dats_generator(er_graph, dat_number=50, seed=True)
 print(len(er_graph.edges()))
 discrete_wtd, discrete_mass = continuous_func_distribution2discrete()
-
+'''
+scatter_wtd(discrete_wtd)
+scatter_wtd(discrete_mass)
+sf = pdf2sf(discrete_mass)
+scatter_wtd(sf)
+hazard_f = sf2hazard(sf)
+scatter_wtd(hazard_f)
+'''
 
 graph_samples = mcmc_algorithm_with_gibbs_sampling(er_graph, discrete_wtd, discrete_mass,dats, delta=0.01, l_t=5)
