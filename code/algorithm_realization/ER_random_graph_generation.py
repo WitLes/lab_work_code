@@ -252,6 +252,7 @@ def renew_lambda_del(edge, dats, lambda_dict_list, survival_func, hazard_f, delt
         # case 1: valid time interval
         if 0 < d_uv_index < max_index:
             lambda_i_v = (lambda_i_v - hazard_f[d_uv_index]) / (1 - hazard_f[d_uv_index] * delta)
+            #lambda_i_v = lambda_i_v - hazard_f[d_uv_index]
             #print("del:",lambda_i_v,"  d_uv_index: ", d_uv_index)
             #time.sleep(1)
 
@@ -287,6 +288,7 @@ def renew_lambda_add(edge, dats, lambda_dict_list, survival_func, hazard_f, delt
         if 0 < d_uv_index < max_index:
             d_uv_index = int((t_v - t_u) / delta)
             lambda_i_v = (1 - hazard_f[d_uv_index] * delta) * lambda_i_v + hazard_f[d_uv_index]
+            #lambda_i_v = lambda_i_v + hazard_f[d_uv_index]
             #print("add:", lambda_i_v)
             #time.sleep(1)
 
@@ -334,8 +336,7 @@ def mcmc_algorithm_with_gibbs_sampling(input_graph, discrete_wtd,discrete_mass,d
 
     # discrete wtd,survival f and hazard f
     survival_f = pdf2sf(discrete_mass)
-    hazard_f = sf2hazard(survival_f)
-    #scatter_wtd(hazard_f)
+    hazard_f = pdf_sf2hazard(discrete_wtd, survival_f)
 
     #hazard_func = list(map(lambda x: x[0] / x[1], zip(discrete_wtd, survival_f)))
     #print(len(hazard_f))
@@ -393,6 +394,7 @@ def mcmc_algorithm_with_gibbs_sampling(input_graph, discrete_wtd,discrete_mass,d
                     for i in range(len(lambda_dict_list)):
                         lambda_dict_list = renew_lambda_add(edge, dats, lambda_dict_list, survival_f, hazard_f, delta,
                                                             l_t)
+                    print(lambda_dict_list[v])
         print("edges number: ", len(graph_iteration.edges()))
         mcmc_iteration_temporal_result(er_graph,graph_iteration)
 
