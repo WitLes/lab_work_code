@@ -13,7 +13,10 @@ def er_graph_generator(node_number=100, link_probability=0.06, seed=None, direct
     # this funtion calls a networkx funtion "nx.erdos_renyi_graph()"
 
     er_graph = nx.erdos_renyi_graph(node_number, link_probability, seed, directed)
-    weighted_er_graph = nx.Graph()
+    if directed == False:
+        weighted_er_graph = nx.Graph()
+    if directed == True:
+        weighted_er_graph = nx.DiGraph()
 
     for edge in er_graph.edges():
         weighted_er_graph.add_edge(edge[0], edge[1], weight=1)
@@ -363,8 +366,11 @@ def mcmc_algorithm_with_gibbs_sampling(input_graph, discrete_wtd, discrete_mass,
 
     # the diagonal element of Laplace Matrix
     lambda_dict_list = initialize_lambda(input_graph)
+
     # the graph used in the iteration, as a temporal graph
+    # Whether to use directed graph or not??
     graph_iteration = nx.Graph(directed=True)
+
 
     # the main loop
     while graph_sample_number < M_sample_size:
