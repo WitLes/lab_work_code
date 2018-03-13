@@ -5,21 +5,42 @@ from sympy.abc import a,x,y
 
 er_graph = nx.erdos_renyi_graph(3,0.5, seed=None, directed=True)
 print(type(er_graph))
-graph = nx.DiGraph()
+graph = nx.Graph()
 print(type(graph))
-graph.add_edge(0,1,weight=1)
-graph.add_edge(1,2,weight=1)
-graph.add_edge(0,2,weight=2)
+graph.add_edges_from([[0,1,{"weight":1}],
+					  [0, 1, {"weight": 1}],
+					  [0, 1, {"weight": 1}],
+					  [0, 1, {"weight": 1}],
+					  [0, 1, {"weight": 1}],
+					  [0, 1, {"weight": 1}],
+					  [0, 1, {"weight": 1}],
+					  [0, 1, {"weight": 1}],
+					  [0, 1, {"weight": 1}],
+					  [0, 1, {"weight": 1}],
+					  [0, 1, {"weight": 1}],
+					  [0, 1, {"weight": 1}],
+					  [0, 1, {"weight": 1}],
+					  [0, 1, {"weight": 1}],
+					  [0, 1, {"weight": 1}],
+					  [0, 1, {"weight": 1}],
+					  [0, 1, {"weight": 1}],
+					  [0, 1, {"weight": 1}]])
+for edge in graph.edges():
+	print(edge)
+"""
 DAT_PATH = nx.shortest_path(graph, source=0, weight="weight")
 DAT = nx.shortest_path_length(graph, source=0, weight="weight")
 print(DAT_PATH)
 print(DAT)
+"""
 
 for edge in graph.edges():
 	print(edge)
-print("1")
+print(len(graph.edges()))
 
 if (1,0) in graph.edges():
 	print("yes")
 else:
 	print("no")
+
+print(np.normal(1))
