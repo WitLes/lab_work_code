@@ -12,9 +12,9 @@ def er_graph_generator(node_number=100, link_probability=0.06, seed=None, direct
     # this funtion calls a networkx funtion "nx.erdos_renyi_graph()"
 
     er_graph = nx.erdos_renyi_graph(node_number, link_probability, seed, directed)
-    if directed == False:
+    if not directed:
         weighted_er_graph = nx.Graph()
-    if directed == True:
+    elif directed:
         weighted_er_graph = nx.DiGraph()
 
     for edge in er_graph.edges():
@@ -26,9 +26,9 @@ def er_graph_generator(node_number=100, link_probability=0.06, seed=None, direct
 
     return weighted_er_graph, node_number, edge_number
 
-def open_file_data_graph():
-    # file name:
-    with open("../data/dolphins.txt", encoding="utf8") as data:
+
+def open_file_data_graph(file_path):
+    with open(file_path, encoding="utf8") as data:
         data_list = []
         for line in data.readlines():
             line = line.strip("\n")
@@ -36,11 +36,12 @@ def open_file_data_graph():
             line = [int(item) for item in line]
             line.append({"weight": 1})
             data_list.append(line)
-        print(data_list)
         data.close()
     graph = nx.Graph()
     graph.add_edges_from(data_list)
-    return graph
+    node_number = graph.number_of_nodes()
+    edge_number = graph.number_of_edges()
+    return graph, node_number, edge_number
 
 
 def demo_graph_generator():
@@ -67,6 +68,11 @@ def demo_graph_generator():
     node_number = len(graph.nodes())
     edge_number = len(graph.edges())
     return graph, node_number, edge_number
+
+
+def draw_original_data_distribution():
+    NUM = 10000
+    data = np.random.normal(1, 2, NUM)
 
 
 def DAT_generator(graph_topology, wtd_array, diffusive_source):
@@ -112,7 +118,15 @@ def dats_generator(graph_topology, dat_number=1, seed=True):
         # The default WTD can be changed here.
         # Now we use the normal distribution as the waiting time distribution.
         # the average value and standard error of the Gaussian are 2.5 and 0.4.
-        wtd_array = np.random.normal(2, 0.4, length)
+        # wtd_array = np.random.normal(1, 0.4, length)
+        j = 0
+        wtd_array = list()
+        while j < length:
+            num = np.random.normal(2.5, 0.2)
+            # num = np.random.beta(0.5,0.5)*5
+            if num > 0:
+                wtd_array.append(num)
+                j += 1
 
         # Use the function DAT_generator() to create each DAT and DAT_PATH.
         dat_temp, dat_path_temp = DAT_generator(graph_topology, wtd_array, diffusive_source)
@@ -174,10 +188,19 @@ def generate_all_edges(graph):
         nodes.append(node)
 
     # all edges except the self loops (i,i).
+
+    # undirected graph
     for i in range(len(nodes)):
         for j in range(i + 1, len(nodes)):
             if i != j:
                 edges_list.append((i, j))
+    """
+    # directed graph    
+    for i in range(len(nodes)):
+        for j in range(len(nodes)):
+            if i != j:
+                edges_list.append((i, j))
+    """
 
     # return a list of all possible edges in the given graph.
     return edges_list
@@ -193,23 +216,22 @@ def find_ordered_tuples_in_list(list_in):
     return possible_edges
 
 
-def initialize_lambda(graph):
+def initialize_lambda(graph, cas_num):
     # initialize the diagonal element of Laplace Matrix:{lambda_i_v} of the graph
-
+    # demo of lambda_dict_list: [{dat1},{dat2},{dat3},{dat4}...]
     # initialize the lambda dict list
     nodes = graph.nodes()
-    lambda_dict_list = [{} for i in range(len(dats))]
+    lambda_dict_list = [{} for i in range(cas_num)]
 
     # set all the elements to 1e-5
     for i in range(len(lambda_dict_list)):
         for node in nodes:
             lambda_dict_list[i][node] = 0.00001
-
     # return the list of dictionaries of lambda
     return lambda_dict_list
 
 
-def calculate_gain_del(edge, dats, lambda_dict_list, discrere_wtd, survival_func, hazard_f, delta, l_t):
+def calculate_gain_del(edge, dats, lambda_dict_list, discrete_wtd, survival_func, hazard_f, delta, l_t):
     # serial number of node u and v
     u = edge[0]
     v = edge[1]
@@ -225,21 +247,28 @@ def calculate_gain_del(edge, dats, lambda_dict_list, discrere_wtd, survival_func
         t_u = dats[i][u]
         t_v = dats[i][v]
 
-        # lambda of i th dat, node v
-        lambda_i_v = lambda_dict_list[i][v]
+        dst_node = u if t_u > t_v else v
+
+        # lambda of i th dat, node dst
+        lambda_i_dst = lambda_dict_list[i][dst_node]
 
         # index
         d_uv_index = abs(int((t_v - t_u) / delta))
 
-
         # case 1
         if 0 < d_uv_index < max_index:
-            temp = survival_func[d_uv_index] - discrete_wtd[d_uv_index]*delta + ((1 - hazard_f[d_uv_index] * delta) * discrete_wtd[d_uv_index]) / (lambda_i_v - hazard_f[d_uv_index])
-            adder = - np.log(survival_func[d_uv_index] - discrete_wtd[d_uv_index]*delta + ((1 - hazard_f[d_uv_index] * delta) * discrete_wtd[d_uv_index]) / (lambda_i_v - hazard_f[d_uv_index]))
-            # adder = np.log(1 - (hazard_f[d_uv_index] / lambda_i_v)) - np.log(survival_func[d_uv_index])
+            """
+             temp = survival_func[d_uv_index] - discrete_wtd[d_uv_index] * delta + ((1 - hazard_f[d_uv_index] * delta) *
+                                                                                   discrete_wtd[d_uv_index]) / (
+                                                                                      lambda_i_dst - hazard_f[
+                                                                                       d_uv_index])
+            """
+            adder = - np.log(survival_func[d_uv_index]*2 - discrete_wtd[d_uv_index] * delta + (
+            (1 - hazard_f[d_uv_index] * delta) * discrete_wtd[d_uv_index]) / (lambda_i_dst - hazard_f[d_uv_index]))
+            # adder = np.log(1 - (hazard_f[d_uv_index] / lambda_i_dst)) - np.log(survival_func[d_uv_index])
         else:
-            adder = -99
-                # adder = -999
+            pass
+            # adder = -999
         """ # not to consider the situations of out range.
         # case 2
         elif d_uv_index <= 0:
@@ -259,7 +288,7 @@ def calculate_gain_del(edge, dats, lambda_dict_list, discrere_wtd, survival_func
     return gain
 
 
-def calculate_gain_add(edge, dats, lambda_dict_list,discrete_wtd, survival_func, hazard_f, delta, l_t):
+def calculate_gain_add(edge, dats, lambda_dict_list, discrete_wtd, survival_func, hazard_f, delta, l_t):
     # same as calculate_gain_del
 
     # serial number of node u and v
@@ -277,20 +306,23 @@ def calculate_gain_add(edge, dats, lambda_dict_list,discrete_wtd, survival_func,
         t_u = dats[i][u]
         t_v = dats[i][v]
 
+        dst_node = u if t_u > t_v else v
+
         # lambda of i th dat, node v
-        lambda_i_v = lambda_dict_list[i][v]
+        lambda_i_dst = lambda_dict_list[i][dst_node]
 
         # index
         d_uv_index = abs(int((t_v - t_u) / delta))
         # print("d_uv_index:",d_uv_index)
         # case 1
         if 0 < d_uv_index < max_index:
-            adder = np.log(survival_func[d_uv_index] - discrete_wtd[d_uv_index] * delta + discrete_wtd[d_uv_index] / lambda_i_v)
-            #if hazard_f[d_uv_index] / lambda_i_v <= 0:
-                # print(hazard_f[d_uv_index],lambda_i_v,"wocaonixuema")
-            #adder = np.log(1 + (hazard_f[d_uv_index] / lambda_i_v)) + np.log(survival_func[d_uv_index])
+            adder = np.log(
+                survival_func[d_uv_index]*0.8 - discrete_wtd[d_uv_index] * delta + discrete_wtd[d_uv_index] / lambda_i_dst)
+            # if hazard_f[d_uv_index] / lambda_i_v <= 0:
+            # print(hazard_f[d_uv_index],lambda_i_v,"wocaonixuema")
+            # adder = np.log(1 + (hazard_f[d_uv_index] / lambda_i_dst)) + np.log(survival_func[d_uv_index])
         else:
-            adder = -99
+            pass
         """
         # case 2
         elif d_uv_index <= 0:
@@ -324,22 +356,16 @@ def renew_lambda_del(edge, dats, lambda_dict_list, survival_func, hazard_f, delt
 
         d_uv_index = abs(int((t_v - t_u) / delta))
 
-        dst_node = - 1
-        if t_u > t_v:
-            dst_node = u
-        else:
-            dst_node = v
+        dst_node = u if t_u > t_v else v
 
-        lambda_i_dst = lambda_dict_list[i][dst_node]
         # case 1: valid time interval
         if 0 < d_uv_index < max_index:
             # print("cao")
-            lambda_i_dst = (lambda_i_dst - hazard_f[d_uv_index]) / (1 - hazard_f[d_uv_index] * delta)
-
+            lambda_dict_list[i][dst_node] = (lambda_dict_list[i][dst_node] - hazard_f[d_uv_index]) / (1 - hazard_f[d_uv_index] * delta)
 
             # lambda_i_v = lambda_i_v - hazard_f[d_uv_index]
-                # print("del:",lambda_i_v,"  d_uv_index: ", d_uv_index)
-                # time.sleep(1)
+            # print("del:",lambda_i_v,"  d_uv_index: ", d_uv_index)
+            # time.sleep(1)
         """
         # case 2: d_uv < 0
         elif d_uv_index <= 0:
@@ -350,7 +376,6 @@ def renew_lambda_del(edge, dats, lambda_dict_list, survival_func, hazard_f, delt
             continue
         """
 
-        lambda_dict_list[i][dst_node] = lambda_i_dst
     # return the modified lambda_dict_list
     return lambda_dict_list
 
@@ -369,18 +394,11 @@ def renew_lambda_add(edge, dats, lambda_dict_list, survival_func, hazard_f, delt
         t_v = dats[i][v]
         d_uv_index = abs(int((t_v - t_u) / delta))
 
-        dst_node = - 1
-        if t_u > t_v:
-            dst_node = u
-        else:
-            dst_node = v
-
-        lambda_i_dst = lambda_dict_list[i][dst_node]
+        dst_node = u if t_u > t_v else v
 
         # case 1:valid time interval
         if 0 < d_uv_index < max_index:
-            d_uv_index = int((t_v - t_u) / delta)
-            lambda_i_dst = (1 - hazard_f[d_uv_index] * delta) * lambda_i_dst + hazard_f[d_uv_index]
+            lambda_dict_list[i][dst_node] = (1 - hazard_f[d_uv_index] * delta) * lambda_dict_list[i][dst_node] + hazard_f[d_uv_index]
         """
         # case 2:d_uv < 0
         elif d_uv_index <= 0:
@@ -390,8 +408,6 @@ def renew_lambda_add(edge, dats, lambda_dict_list, survival_func, hazard_f, delt
         elif d_uv_index > max_index:
             continue
         """
-
-        lambda_dict_list[i][dst_node] = lambda_i_dst
     return lambda_dict_list
 
 
@@ -409,56 +425,55 @@ def mcmc_iteration_temporal_result(source_graph, sample_graph):
     source_edge_number = len(source_graph.edges())
     sample_graph_number = len(sample_graph.edges())
 
-    print("accuracy:", TP_number / (TP_number + FP_number+1), " | ", "completeness: ", TP_number / source_edge_number)
+    print("accuracy:", TP_number / (TP_number + FP_number + 1), " | ", "completeness: ", TP_number / source_edge_number)
 
 
-def mcmc_algorithm_with_gibbs_sampling(input_graph, discrete_wtd, discrete_mass, dats, delta=0.01, l_t=5):
+def mcmc_algorithm_with_gibbs_sampling(demo_graph, input_graph, discrete_wtd, dats, delta=0.01, l_t=5):
     #  MCMC Algorithm with Gibbs Sampling
-
-    # all the possible edges which may occur in the graph.
-    edges = generate_all_edges(input_graph)
-    C = len(dats)  # the number of dats
+    CAS_NUM = len(dats)  # the number of dats
 
     # parameters
-    M_sample_size = 30
-    burn_in = 10
-    max_lag = 10
+    M_SAMPLE_SIZE = 30
+    BURN_IN = 10
+    MAX_LAG = 10
     iteration = 0
     graph_sample_number = 0
     lag = 0
 
     # discrete wtd,survival f and hazard f
-    survival_f = pdf2sf(discrete_mass)
+    survival_f = pdf2sf_using_density(discrete_wtd)
+    # survival_f = pdf2sf_using_density(discrete_wtd)
     hazard_f = pdf_sf2hazard(discrete_wtd, survival_f)
 
     # hazard_func = list(map(lambda x: x[0] / x[1], zip(discrete_wtd, survival_f)))
     # print(len(hazard_f))
+
     # the final output: M sample graphs list
     graph_samples = list()
+    # all the possible edges which may occur in the graph.
+    possible_edges = generate_all_edges(input_graph)
 
     # the diagonal element of Laplace Matrix
-    lambda_dict_list = initialize_lambda(input_graph)
+    lambda_dict_list = initialize_lambda(input_graph, CAS_NUM)
 
     # the graph used in the iteration, as a temporal graph
     # Whether to use directed graph or not??
     graph_iteration = nx.Graph()
 
     # the main loop
-    while graph_sample_number < M_sample_size:
+    while graph_sample_number < M_SAMPLE_SIZE:
 
         print("iteration:", iteration, "  ", "sampled number:", graph_sample_number)
         iteration += 1
 
         # using the edges generated by "generate_all_edges(input_graph)"
-        for edge in edges:
+        for edge in possible_edges:
             # time.sleep(2)
-            u = edge[0]
-            v = edge[1]
-
             # if the edge is in the current graph, calculate whether to delete it or not using marginal gain
             if edge in graph_iteration.edges():
                 marginal_gain = 1
-                marginal_gain += calculate_gain_del(edge, dats, lambda_dict_list, discrete_wtd, survival_f, hazard_f, delta, l_t)
+                marginal_gain += calculate_gain_del(edge, dats, lambda_dict_list, discrete_wtd, survival_f, hazard_f,
+                                                    delta, l_t)
                 p_uv = 1 / (1 + np.exp(-marginal_gain))
                 # print("del:", marginal_gain)
                 # time.sleep(1)
@@ -466,14 +481,16 @@ def mcmc_algorithm_with_gibbs_sampling(input_graph, discrete_wtd, discrete_mass,
                 if np.random.rand() < p_uv:
 
                     # renew graph states
-                    graph_iteration.remove_edge(u, v)
-                    for i in range(len(lambda_dict_list)):
-                        lambda_dict_list = renew_lambda_del(edge, dats, lambda_dict_list, survival_f, hazard_f, delta, l_t)
+                    graph_iteration.remove_edge(edge[0], edge[1])
+                    for i in range(CAS_NUM):
+                        lambda_dict_list = renew_lambda_del(edge, dats, lambda_dict_list, survival_f, hazard_f, delta,
+                                                            l_t)
 
             # if the edge is NOT in the current graph, calculate whether to add it or not
             else:
                 marginal_gain = -1
-                marginal_gain += calculate_gain_add(edge, dats, lambda_dict_list, discrete_wtd, survival_f, hazard_f, delta, l_t)
+                marginal_gain += calculate_gain_add(edge, dats, lambda_dict_list, discrete_wtd, survival_f, hazard_f,
+                                                    delta, l_t)
                 p_uv = 1 / (1 + np.exp(-marginal_gain))
 
                 # test
@@ -485,8 +502,8 @@ def mcmc_algorithm_with_gibbs_sampling(input_graph, discrete_wtd, discrete_mass,
                 if np.random.rand() < p_uv:
 
                     # renew states
-                    graph_iteration.add_edge(u, v)
-                    for i in range(len(lambda_dict_list)):
+                    graph_iteration.add_edge(edge[0], edge[1])
+                    for i in range(CAS_NUM):
                         lambda_dict_list = renew_lambda_add(edge, dats, lambda_dict_list, survival_f, hazard_f, delta,
                                                             l_t)
 
@@ -494,15 +511,16 @@ def mcmc_algorithm_with_gibbs_sampling(input_graph, discrete_wtd, discrete_mass,
         mcmc_iteration_temporal_result(demo_graph, graph_iteration)
 
         # fist let the markov chain goes into the stable state
-        # burn_in is the initial iteration number
-        if iteration > burn_in:
+        # BURN_IN is the initial iteration number
+        if iteration > BURN_IN:
             lag += 1
 
         # store a sample of the graph if lag is up to max_lag, the recount lag
-        if lag == max_lag:
+        if lag == MAX_LAG:
             graph_samples.append(nx.Graph(graph_iteration))
             graph_sample_number += 1
             lag = 0
+        # draw_graph(graph_iteration)
 
     # return the list of graph samples
     return graph_samples
@@ -517,30 +535,10 @@ def waiting_time_distribution_iteration(graph_samples, dats):
     pass
 
 
-def pdf2sf(discrete_mass):
-    # !!IMPORTANT!! Note that the discrete survival function is calculated by the WTD_MASS,not wtd pdf.
-
-    # !!important!! input parameter is the mass of wtd
-    sum_mass = sum(discrete_mass)
-
-    sf = list()
-    for i in range(0, len(discrete_mass)):
-        point_value = sum_mass - sum(discrete_mass[0:i])
-        sf.append(point_value)
-    return sf
-
-
-def pdf_sf2hazard(discrete_wtd, survival_function):
-    hazard_function = []
-    for i in range(len(discrete_wtd)):
-        hazard_function.append(discrete_wtd[i] / survival_function[i])
-    return hazard_function
-
-
 def continuous_func_distribution2discrete(delta=0.01, l_t=5):
     # gauss distribution by default
-    miu = 2
-    sigma = 0.4
+    miu = 2.5
+    sigma = 0.2
     discrete_wtd = list()
     discrete_mass = list()
     discrete_number = int(l_t / delta)
@@ -548,8 +546,15 @@ def continuous_func_distribution2discrete(delta=0.01, l_t=5):
         # here to change the formula of the distribution
         discrete_wtd.append(1 / np.sqrt(2 * np.pi) / sigma * np.exp(-((delta * i - miu) ** 2) / (2 * (sigma ** 2))))
         discrete_mass.append(discrete_wtd[i] * delta)
+    # scatter_wtd(discrete_mass)
+    # scatter_wtd(discrete_wtd)
 
-    # if there is something still needed, it must be the normalization step, which makes the sum of discrete_mass equals to 1.
+    # normalization
+    mass_sum = sum(discrete_mass)
+    discrete_mass = [x / mass_sum for x in discrete_mass]
+    discrete_wtd = [x / mass_sum for x in discrete_wtd]
+    # scatter_wtd(discrete_mass)
+    # scatter_wtd(discrete_wtd)
 
     # discrete_wtd is a list of the discrete point of WTD.for example, list[1] = exp(delta), list[n] = exp(delta * n)
     # discrete_mass is the list of mass of each small section.
@@ -581,6 +586,7 @@ def continuous_exp_distribution2discrete_using_integration(delta, l_t, miu=1):
 
 
 def continuous_gaussian_distribution2discrete_using_integration(delta, l_t, miu=2, sigma=0.4):
+    # not used
     discrete_wtd = list()
     discrete_mass = list()
     discrete_wtd.append(0)
@@ -599,13 +605,67 @@ def continuous_gaussian_distribution2discrete_using_integration(delta, l_t, miu=
     return discrete_wtd, discrete_mass
 
 
-def sf2hazard(sf):
+def pdf2sf_using_mass(discrete_mass):
+    # !!IMPORTANT!! Note that the discrete survival function is calculated by the WTD_MASS,not wtd pdf.
+
+    # !!important!! input parameter is the mass of wtd
+    sum_mass = sum(discrete_mass)
+
+    sf = list()
+    for i in range(0, len(discrete_mass)):
+        sf.append(sum_mass - sum(discrete_mass[0:i]))
+
+    normalize_sf(sf)
+    return sf
+
+
+def pdf2sf_using_density(discrete_wtd, delta=0.01):
+    sf = list()
+    sf.append(1)
+    for i in range(1, len(discrete_wtd)):
+        sf.append(1 - sum(discrete_wtd[0:i]) * delta)
+    return sf
+
+
+def is_same_pdf(pdf1, pdf2):
+    div = list()
+    for i in range(len(pdf1)):
+        div.append(abs(pdf1[i] / pdf2[i]) if pdf2[i] != 0 else 0)
+
+    if min(div) > 0.9 and max(div) < 1.1:
+        return True
+    else:
+        return False
+
+
+def sf2hazard(sf, delta=0.01):
     hazard = list()
     hazard.append(0)
     for i in range(1, len(sf)):
-        haz = 1 - sf[i] / sf[i - 1]
+        haz = (1 - sf[i] / sf[i - 1]) / delta
         hazard.append(haz)
+
     return hazard
+
+
+def pdf_sf2hazard(wtd, sf):
+    hazard = list()
+    for i in range(len(wtd)):
+        hazard.append(wtd[i] / sf[i] if sf[i] != 0 else 0)
+
+    return hazard
+
+
+def normalize_pdf(f, delta=0.01):
+    sum_f = sum(f) * delta
+    f = [x / sum_f for x in f]
+    return f
+
+
+def normalize_sf(f):
+    if len(f) == 0:
+        print("ERROR! survival function: length: 0 !")
+    return [x / f[0] for x in f]
 
 
 def scatter_wtd(f):
@@ -613,26 +673,219 @@ def scatter_wtd(f):
     plt.show()
 
 
-# generate the graph topology, return the graph, the number of nodes, the number of edges.
-#er_graph, node_number, edge_number = er_graph_generator(100, 0.06, seed=0, directed=True)
+def draw_graph(graph):
+    nx.draw(graph,pso=nx.spring_layout)
+    plt.show()
 
-#demo_graph, node_number, edge_number = demo_graph_generator()
-#print("graph || nodes:", node_number, "; edges:", edge_number)
 
-# generate data arrival times(dats), also dat_path.
-# set dat_number to control the total number of dat.
-#dats, dat_path = dats_generator(demo_graph, dat_number=40, seed=True)
-#discrete_wtd, discrete_mass = continuous_func_distribution2discrete()
+def init_discrete_wtd(dats, delta=0.01, l_t=5):
+    miu = 0
+    for dat in dats:
+        dat_list = sorted(dat.items(), key=lambda x: x[1])
+        miu += dat_list[1][1]
+    miu /= len(dats)
+    init_wtd = list()
 
-# draw wtd, sf, hazard_f
-"""
-scatter_wtd(discrete_wtd)
-scatter_wtd(discrete_mass)
-sf = pdf2sf(discrete_mass)
-scatter_wtd(sf)
-hazard_f = sf2hazard(sf)
-scatter_wtd(hazard_f)
-"""
+    # exponential distribution
+    for i in range(int(l_t / delta)):
+        init_wtd.append(1 / miu * np.exp(-i * delta / miu))
 
-#graph_samples = mcmc_algorithm_with_gibbs_sampling(demo_graph, discrete_wtd, discrete_mass, dats, delta=0.01, l_t=5)
-open_file_data_graph()
+    # gaussian distribution
+    # for i in range(int(l_t/delta)):
+    #   init_wtd.append(1/np.sqrt(2*np.pi)/0.2 * np.exp(-(i*delta - 4) ** 2/(0.2**2)))
+    # normalization
+    sum_mass = sum(init_wtd) * delta
+    init_wtd = [x / sum_mass for x in init_wtd]
+    # scatter_wtd(init_wtd)
+    return init_wtd
+
+
+def Kolmogorov_Smirnov_distance(last_wtd, present_wtd):
+    # Kolmogorov-Smirnov distance of the two given wtd.
+    max_distance = float(0)
+    for i in range(len(last_wtd)):
+        max_distance = max(max_distance, abs(present_wtd[i] - last_wtd[i]))
+    return max_distance
+
+
+def get_adj_edge_from_node(graph, node):
+    # get the adjacent edges of a node in the undirected graph.
+    adj_list = list()
+    for edge in graph.edges():
+        if node in edge:
+            adj_list.append(edge)
+    return adj_list
+
+
+def calculate_sum_hazard(dat, hazard, dst_node, edges_list, delta):
+    sum_hazard = 0
+
+    # edges_list is the edges adjacent to the dst_node for the compute of accumulative hazard rate.
+    for edge in edges_list:
+        u = edge[0]
+        v = edge[1]
+        '''
+        d_uv_index = abs(int((dat[u] - dat[v]) / delta))
+        sum_hazard += hazard[d_uv_index]
+        '''
+        if u == dst_node:
+            if dat[u] > dat[v]:
+                d_uv_index = abs(int((dat[u] - dat[v]) / delta))
+                sum_hazard += hazard[d_uv_index]
+        elif v == dst_node:
+            if dat[u] < dat[v]:
+                d_uv_index = abs(int((dat[u] - dat[v]) / delta))
+                sum_hazard += hazard[d_uv_index]
+
+    return sum_hazard
+
+
+def init_kernel_function(h, l_t=5, delta=0.01):
+    # gauss distribution by default
+
+    # parameters
+    miu = (l_t - 0) / 2
+    sigma = h
+
+    discrete_wtd = list()
+    discrete_mass = list()
+    discrete_number = int(l_t / delta)
+    for i in range(discrete_number):
+        # here to change the formula of the distribution
+        discrete_wtd.append(1 / np.sqrt(2 * np.pi) / sigma * np.exp(-((delta * i - miu) ** 2) / (2 * (sigma ** 2))))
+        discrete_mass.append(discrete_wtd[i] * delta)
+
+    # normalization
+    discrete_wtd = normalize_pdf(discrete_wtd)
+    discrete_mass = normalize_pdf(discrete_mass)
+
+    # discrete_wtd is a list of the discrete point of WTD.for example, list[1] = exp(delta), list[n] = exp(delta * n)
+    # discrete_mass is the list of mass of each small section.
+    # we return both of them for the convenience of further calculation.
+
+    # the x-axis begins from 1, that is {1,2,...,l_t}, but note that the index of the "list" starts from 0.
+    return discrete_wtd
+
+
+def wtd_estimation(graph_topology, dats, last_wtd, delta=0.01, l_t=5):
+    # Kernel width
+    # h = 0.01* l_t
+    h = 0.05
+    # index length
+    INDEX_LEN = len(last_wtd)
+
+    # wtd, mass, survival, hazard initialization
+    present_wtd = [0 for i in range(INDEX_LEN)]
+
+    # init discrete kernel function
+    kernel_func = init_kernel_function(h, l_t, delta)
+
+    while True:
+
+        # update
+        survival_f = pdf2sf_using_density(last_wtd)
+        hazard_f = pdf_sf2hazard(last_wtd, survival_f)
+
+        # auxiliary	variable
+        tdoa = [0 for i in range(INDEX_LEN)]
+        beta = [0 for i in range(INDEX_LEN)]
+
+        for dat in dats:
+
+            for edge in graph_topology.edges():
+                u = edge[0]
+                v = edge[1]
+                dst_node = u if dat[u] > dat[v] else v
+
+                # discrete index in the list
+                d_uv_index = abs(int((dat[u] - dat[v]) / delta))
+
+                if 0 < d_uv_index < (INDEX_LEN):
+                    # accumulate tdoa and beta
+                    tdoa[d_uv_index] += 1
+                    adj_edge_list = get_adj_edge_from_node(graph_topology, dst_node)
+                    beta[d_uv_index] += hazard_f[d_uv_index] / calculate_sum_hazard(dat, hazard_f, dst_node,
+                                                                                    adj_edge_list, delta)
+
+        # tdoa = [10000*x for x in tdoa]
+        # beta = [10000*x for x in beta]
+        present_wtd = [0 for i in range(INDEX_LEN)]
+
+        # accumulate tdoa and beta to get the present wtd against the last wtd
+        for i in range(INDEX_LEN):
+            if tdoa[i] > 0:
+                present_wtd[i] += beta[i]
+                for j in range(i + 1, INDEX_LEN):
+                    present_wtd[j] += (tdoa[i] - beta[i]) * 0.05 * last_wtd[j] / survival_f[i]
+
+        # scatter_wtd(present_wtd)
+        # use kernel function to smooth the wtd
+        present_wtd = np.convolve(present_wtd, kernel_func, mode="same")
+        # normalization
+        present_wtd = normalize_pdf(present_wtd)
+
+        if Kolmogorov_Smirnov_distance(last_wtd, present_wtd) < 0.0001:
+            scatter_wtd(present_wtd)
+            break
+
+        print(Kolmogorov_Smirnov_distance(last_wtd, present_wtd))
+        # scatter_wtd(present_wtd)
+        last_wtd = present_wtd[:]
+
+        # scatter_wtd(survival_f)
+        # scatter_wtd(hazard_f)
+
+    # scatter_wtd(present_wtd)
+    last_wtd = present_wtd[:]
+
+    return present_wtd
+
+
+def calculate_wtd_prob(dat,wtd,i,j,delta=0.01,l_t=5):
+    d_uv_index = int(abs(dat[i] - dat[j])/delta)
+    if 0 <= d_uv_index < int(l_t/delta):
+        return wtd[d_uv_index]
+    else:
+        return -10
+
+
+def faster_topology_reconstruction_through_dats_based_on_wtd(dats, wtd):
+        CAS = len(dats)
+        NODE_NUMBER = len(dats[0])
+        probobility_matrix = np.zeros((NODE_NUMBER,NODE_NUMBER),dtype=float)
+        time_aggregated_graph = nx.Graph()
+        sf = pdf2sf_using_density(wtd, delta=0.01)
+        for dat in dats:
+            dat_sorted_list = sorted(dat.items(),key=lambda x: x[1], reverse=False)
+            for i in range(NODE_NUMBER):
+                for j in range(i+1,NODE_NUMBER):
+                    adder = calculate_wtd_prob(dat,wtd,i,j,delta=0.01,l_t=5)
+                    probobility_matrix[i][j] += adder
+                    probobility_matrix[j][i] += adder
+
+        max_num = probobility_matrix.max()
+        min_num = probobility_matrix.min()
+        print("max: ",max_num,"min:",min_num)
+        probobility_matrix *= 1/max_num
+
+        for i in range(NODE_NUMBER):
+            for j in range(NODE_NUMBER):
+                if probobility_matrix[i][j] > 0.4:
+                    probobility_matrix[i][j] = 1
+                else:
+                    probobility_matrix[i][j] = 0
+        return probobility_matrix
+
+
+def count_in_matrix(m):
+    count = 0
+    for line in m:
+        for item in line:
+            if item:
+                count += 1
+    return count
+
+
+
+if __name__ == "__main__":
+    print("module: stn_reconstruction_lib")

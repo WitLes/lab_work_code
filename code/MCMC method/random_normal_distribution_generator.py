@@ -5,7 +5,7 @@ import math
 from numpy.linalg import cholesky
 import matplotlib.pyplot as plt
 
-sampleNo = 100
+sampleNo = 10000
 # 一维正态分布
 # 下面三种方式是等效的
 rand_a = np.random.rand(10)
