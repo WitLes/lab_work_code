@@ -8,7 +8,7 @@ print("average shortest path length: ", nx.average_shortest_path_length(demo_gra
 print("average clustering coef: ", nx.average_clustering(demo_graph))
 # generate data arrival times(dats), also dat_path.
 # set dat_number to control the total number of dat.
-dats, dat_path = dats_generator(demo_graph, dat_number=int(0.5*node_number), seed=False)
+dats, dat_path = dats_generator(demo_graph, dat_number=int(node_number), seed=False)
 discrete_wtd, discrete_mass = continuous_func_distribution2discrete()
 adj_mat = faster_topology_reconstruction_through_dats_based_on_wtd2(dats, discrete_wtd)
 tp_fp = count_in_matrix(adj_mat) / 2

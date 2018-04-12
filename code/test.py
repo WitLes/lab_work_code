@@ -1,6 +1,5 @@
-import numpy as np
+from algorithm_realization.stn_reconstruction_lib import *
 
-probobility_matrix = np.zeros((10,10), dtype=float)
-probobility_matrix[3][4] = 8
-probobility_matrix *=(1/6)
-print(probobility_matrix.max())
+pdf,pmf = pdf_generator(mode="pareto")
+scatter_wtd(pdf)
+scatter_wtd(pmf)

@@ -3,7 +3,7 @@ import networkx as nx
 import random
 import time
 import matplotlib.pyplot as plt
-import sympy as spu
+import math
 
 
 def er_graph_generator(node_number=100, link_probability=0.06, seed=None, directed=False):
@@ -105,6 +105,7 @@ def dats_generator(graph_topology, dat_number=1, seed=True):
     # You can set seed=True if you want the dats is always fixed whenever you run the sampling code.
     # If you want to change the distribution of waiting times(WTD). You can change the function used in the codes.
     #	|-->"wtd_array = np.random.normal(5, 1, length)"<--|
+    # Seed = TRUE,FIXED   Seed = False,Random
 
     length = len(graph_topology.edges())
     dat = []
@@ -433,9 +434,9 @@ def mcmc_algorithm_with_gibbs_sampling(demo_graph, input_graph, discrete_wtd, da
     CAS_NUM = len(dats)  # the number of dats
 
     # parameters
-    M_SAMPLE_SIZE = 30
-    BURN_IN = 10
-    MAX_LAG = 10
+    M_SAMPLE_SIZE = 10
+    BURN_IN = 5
+    MAX_LAG = 5
     iteration = 0
     graph_sample_number = 0
     lag = 0
@@ -527,12 +528,300 @@ def mcmc_algorithm_with_gibbs_sampling(demo_graph, input_graph, discrete_wtd, da
 
 
 def cutting_operation(graph_samples):
-    pass
+    count_dict = {}
+
+    for graph in graph_samples:
+        for edge in graph.edges:
+            if edge in count_dict:
+                count_dict[edge] += 1
+            else:
+                count_dict[edge] = 1
+    cutting_graph = nx.Graph()
+    for key,value in count_dict.items():
+        if value > 6:
+            cutting_graph.add_edge(key[0],key[1])
+    return cutting_graph
 
 
 def waiting_time_distribution_iteration(graph_samples, dats):
     wtd_estimation = list()
     pass
+
+
+def pdf_generator(mode="gaussian",delta=0.01,l_t=5):
+
+    if mode == "gaussian":
+        return gaussian_pdf_generate(miu=2.5,sigma=0.2,l_t=l_t,delta=delta)
+    elif mode == "weibull":
+        # error!
+        return weibull_pdf_generate(a=1,b=2.5,l_t=l_t,delta=delta)
+    elif mode == "uniform":
+        return uniform_pdf_generate(a=1,b=3,l_t=l_t,delta=delta)
+    elif mode == "gumbel":
+        return gumbel_pdf_generate(a=3,b=2,l_t=l_t,delta=delta)
+    elif mode == "beta":
+        return beta_pdf_generate(a=9,b=2,l_t=l_t,delta=delta)
+    elif mode == "bimodal":
+        return bimodal_pdf_generate(a1=2,a2=9,b1=8,b2=3,l_t=l_t,delta=delta)
+    elif mode == "pareto":
+        return pareto_pdf_generate(a=0.3,b=0.5,l_t=l_t,delta=delta)
+    elif mode == "jshape":
+        pass
+    elif mode == "exponential":
+        return exponential_pdf_generate(b=1,l_t=l_t,delta=delta)
+
+
+def jshape_pdf_generate(a=0.3,b=4,c=0.5,l_t=5,delta=0.01):
+    # under working
+    discrete_wtd = list()
+    discrete_mass = list()
+    discrete_number = int(l_t / delta)
+    for i in range(0,discrete_number):
+        x = i * delta/l_t
+        print(x)
+        # here to change the formula of the distribution
+        discrete_wtd.append(math.gamma(a+b)/(math.gamma(a)*math.gamma(b))*(x**(a-1))*((1-x)**(b-1)))
+        discrete_mass.append(discrete_wtd[i] * delta)
+    # scatter_wtd(discrete_mass)
+    # scatter_wtd(discrete_wtd)
+
+    # normalization
+    mass_sum = sum(discrete_mass)
+    discrete_mass = [x / mass_sum for x in discrete_mass]
+    discrete_wtd = [x / mass_sum for x in discrete_wtd]
+    # scatter_wtd(discrete_mass)
+    # scatter_wtd(discrete_wtd)
+
+    # discrete_wtd is a list of the discrete point of WTD.for example, list[1] = exp(delta), list[n] = exp(delta * n)
+    # discrete_mass is the list of mass of each small section.
+    # we return both of them for the convenience of further calculation.
+
+    # the x-axis begins from 1, that is {1,2,...,l_t}, but note that the index of the "list" starts from 0.
+    return discrete_wtd, discrete_mass
+
+
+def beta_pdf_generate(a=9,b=2,l_t=5,delta=0.01):
+    discrete_wtd = list()
+    discrete_mass = list()
+    discrete_number = int(l_t / delta)
+    for i in range(0,discrete_number):
+        x = i * delta/l_t
+        print(x)
+        # here to change the formula of the distribution
+        discrete_wtd.append(math.gamma(a+b)/(math.gamma(a)*math.gamma(b))*(x**(a-1))*((1-x)**(b-1)))
+        discrete_mass.append(discrete_wtd[i] * delta)
+    # scatter_wtd(discrete_mass)
+    # scatter_wtd(discrete_wtd)
+
+    # normalization
+    mass_sum = sum(discrete_mass)
+    discrete_mass = [x / mass_sum for x in discrete_mass]
+    discrete_wtd = [x / mass_sum for x in discrete_wtd]
+    # scatter_wtd(discrete_mass)
+    # scatter_wtd(discrete_wtd)
+
+    # discrete_wtd is a list of the discrete point of WTD.for example, list[1] = exp(delta), list[n] = exp(delta * n)
+    # discrete_mass is the list of mass of each small section.
+    # we return both of them for the convenience of further calculation.
+
+    # the x-axis begins from 1, that is {1,2,...,l_t}, but note that the index of the "list" starts from 0.
+    return discrete_wtd, discrete_mass
+
+
+def bimodal_pdf_generate(a1=2,a2=9,b1=8,b2=3,l_t=5,delta=0.01):
+    discrete_wtd = list()
+    discrete_mass = list()
+    discrete_number = int(l_t / delta)
+    # normalization
+    beta1_wtd,beta1_mass = beta_pdf_generate(a1,b1,l_t,delta)
+    beta2_wtd,beta2_mass = beta_pdf_generate(a2, b2, l_t, delta)
+    for i in range(discrete_number):
+        discrete_wtd.append(beta1_wtd[i] + beta2_wtd[i])
+        discrete_mass.append(beta1_mass[i] + beta2_mass[i])
+    mass_sum = sum(discrete_mass)
+    discrete_mass = [x / mass_sum for x in discrete_mass]
+    discrete_wtd = [x / mass_sum for x in discrete_wtd]
+    # scatter_wtd(discrete_mass)
+    # scatter_wtd(discrete_wtd)
+
+    # discrete_wtd is a list of the discrete point of WTD.for example, list[1] = exp(delta), list[n] = exp(delta * n)
+    # discrete_mass is the list of mass of each small section.
+    # we return both of them for the convenience of further calculation.
+
+    # the x-axis begins from 1, that is {1,2,...,l_t}, but note that the index of the "list" starts from 0.
+    return discrete_wtd, discrete_mass
+
+
+def pareto_pdf_generate(a=0.3,b=0.5,l_t=5,delta=0.01):
+    discrete_wtd = list()
+    discrete_mass = list()
+    discrete_number = int(l_t / delta)
+    for i in range(0,discrete_number):
+        x = i * delta
+        # here to change the formula of the distribution
+        if x > a:
+            discrete_wtd.append(b/a*(x/a)**(-b-1))
+            discrete_mass.append(discrete_wtd[i] * delta)
+        else:
+            discrete_wtd.append(0)
+            discrete_mass.append(0)
+    # scatter_wtd(discrete_mass)
+    # scatter_wtd(discrete_wtd)
+
+    # normalization
+    mass_sum = sum(discrete_mass)
+    discrete_mass = [x / mass_sum for x in discrete_mass]
+    discrete_wtd = [x / mass_sum for x in discrete_wtd]
+    # scatter_wtd(discrete_mass)
+    # scatter_wtd(discrete_wtd)
+
+    # discrete_wtd is a list of the discrete point of WTD.for example, list[1] = exp(delta), list[n] = exp(delta * n)
+    # discrete_mass is the list of mass of each small section.
+    # we return both of them for the convenience of further calculation.
+
+    # the x-axis begins from 1, that is {1,2,...,l_t}, but note that the index of the "list" starts from 0.
+    return discrete_wtd, discrete_mass
+
+
+def exponential_pdf_generate(a=3,b=2,l_t=5,delta=0.01):
+    discrete_wtd = list()
+    discrete_mass = list()
+    discrete_number = int(l_t / delta)
+    for i in range(0,discrete_number):
+        x = i * delta
+        # here to change the formula of the distribution
+        discrete_wtd.append(1/b*np.exp(-x/b))
+        discrete_mass.append(discrete_wtd[i] * delta)
+    # scatter_wtd(discrete_mass)
+    # scatter_wtd(discrete_wtd)
+
+    # normalization
+    mass_sum = sum(discrete_mass)
+    discrete_mass = [x / mass_sum for x in discrete_mass]
+    discrete_wtd = [x / mass_sum for x in discrete_wtd]
+    # scatter_wtd(discrete_mass)
+    # scatter_wtd(discrete_wtd)
+
+    # discrete_wtd is a list of the discrete point of WTD.for example, list[1] = exp(delta), list[n] = exp(delta * n)
+    # discrete_mass is the list of mass of each small section.
+    # we return both of them for the convenience of further calculation.
+
+    # the x-axis begins from 1, that is {1,2,...,l_t}, but note that the index of the "list" starts from 0.
+    return discrete_wtd, discrete_mass
+
+
+def gumbel_pdf_generate(a=3,b=2,l_t=5,delta=0.01):
+    discrete_wtd = list()
+    discrete_mass = list()
+    discrete_number = int(l_t / delta)
+    discrete_wtd.append(0)
+    discrete_mass.append(0)
+    for i in range(1,discrete_number):
+        x = i * delta
+        # here to change the formula of the distribution
+        discrete_wtd.append(a*b*(x**(-a-1))*np.exp(-b*(x**(-a))))
+        discrete_mass.append(discrete_wtd[i] * delta)
+    # scatter_wtd(discrete_mass)
+    # scatter_wtd(discrete_wtd)
+
+    # normalization
+    mass_sum = sum(discrete_mass)
+    discrete_mass = [x / mass_sum for x in discrete_mass]
+    discrete_wtd = [x / mass_sum for x in discrete_wtd]
+    # scatter_wtd(discrete_mass)
+    # scatter_wtd(discrete_wtd)
+
+    # discrete_wtd is a list of the discrete point of WTD.for example, list[1] = exp(delta), list[n] = exp(delta * n)
+    # discrete_mass is the list of mass of each small section.
+    # we return both of them for the convenience of further calculation.
+
+    # the x-axis begins from 1, that is {1,2,...,l_t}, but note that the index of the "list" starts from 0.
+    return discrete_wtd, discrete_mass
+
+
+def weibull_pdf_generate(a=1,b=2.5,l_t=5,delta=0.01):
+    discrete_wtd = list()
+    discrete_mass = list()
+    discrete_number = int(l_t / delta)
+    for i in range(discrete_number):
+        x = i * delta
+        # here to change the formula of the distribution
+        discrete_wtd.append(b/(a**b)*(x**(b-1))*np.exp(-(x/a)**b))
+        discrete_mass.append(discrete_wtd[i] * delta)
+    # scatter_wtd(discrete_mass)
+    # scatter_wtd(discrete_wtd)
+
+    # normalization
+    mass_sum = sum(discrete_mass)
+    discrete_mass = [x / mass_sum for x in discrete_mass]
+    discrete_wtd = [x / mass_sum for x in discrete_wtd]
+    # scatter_wtd(discrete_mass)
+    # scatter_wtd(discrete_wtd)
+
+    # discrete_wtd is a list of the discrete point of WTD.for example, list[1] = exp(delta), list[n] = exp(delta * n)
+    # discrete_mass is the list of mass of each small section.
+    # we return both of them for the convenience of further calculation.
+
+    # the x-axis begins from 1, that is {1,2,...,l_t}, but note that the index of the "list" starts from 0.
+    return discrete_wtd, discrete_mass
+
+
+def gaussian_pdf_generate(miu=2.5,sigma=0.2,l_t=5,delta=0.01):
+    # gauss distribution by default
+    discrete_wtd = list()
+    discrete_mass = list()
+    discrete_number = int(l_t / delta)
+    for i in range(discrete_number):
+        # here to change the formula of the distribution
+        discrete_wtd.append(1 / np.sqrt(2 * np.pi) / sigma * np.exp(-((delta * i - miu) ** 2) / (2 * (sigma ** 2))))
+        discrete_mass.append(discrete_wtd[i] * delta)
+    # scatter_wtd(discrete_mass)
+    # scatter_wtd(discrete_wtd)
+
+    # normalization
+    mass_sum = sum(discrete_mass)
+    discrete_mass = [x / mass_sum for x in discrete_mass]
+    discrete_wtd = [x / mass_sum for x in discrete_wtd]
+    # scatter_wtd(discrete_mass)
+    # scatter_wtd(discrete_wtd)
+
+    # discrete_wtd is a list of the discrete point of WTD.for example, list[1] = exp(delta), list[n] = exp(delta * n)
+    # discrete_mass is the list of mass of each small section.
+    # we return both of them for the convenience of further calculation.
+
+    # the x-axis begins from 1, that is {1,2,...,l_t}, but note that the index of the "list" starts from 0.
+    return discrete_wtd, discrete_mass
+
+
+def uniform_pdf_generate(a=1,b=3,l_t=5,delta=0.01):
+    # gauss distribution by default
+    discrete_wtd = list()
+    discrete_mass = list()
+    discrete_number = int(l_t / delta)
+    for i in range(discrete_number):
+        # here to change the formula of the distribution
+        if a < i*delta < b:
+            discrete_wtd.append(1/abs(b-a)/delta)
+            discrete_mass.append(discrete_wtd[i] * delta)
+        else:
+            discrete_wtd.append(0)
+            discrete_mass.append(0)
+    # scatter_wtd(discrete_mass)
+    # scatter_wtd(discrete_wtd)
+
+    # normalization
+    mass_sum = sum(discrete_mass)
+    discrete_mass = [x / mass_sum for x in discrete_mass]
+    discrete_wtd = [x / mass_sum for x in discrete_wtd]
+    # scatter_wtd(discrete_mass)
+    # scatter_wtd(discrete_wtd)
+
+    # discrete_wtd is a list of the discrete point of WTD.for example, list[1] = exp(delta), list[n] = exp(delta * n)
+    # discrete_mass is the list of mass of each small section.
+    # we return both of them for the convenience of further calculation.
+
+    # the x-axis begins from 1, that is {1,2,...,l_t}, but note that the index of the "list" starts from 0.
+    return discrete_wtd, discrete_mass
 
 
 def continuous_func_distribution2discrete(delta=0.01, l_t=5):
@@ -841,15 +1130,15 @@ def wtd_estimation(graph_topology, dats, last_wtd, delta=0.01, l_t=5):
     return present_wtd
 
 
-def calculate_wtd_prob(dat,wtd,i,j,delta=0.01,l_t=5):
+def calculate_wtd_prob(dat,wtd,sf,i,j,delta=0.01,l_t=5):
     d_uv_index = int(abs(dat[i] - dat[j])/delta)
     if 0 <= d_uv_index < int(l_t/delta):
-        return wtd[d_uv_index]
+        return wtd[d_uv_index]*sf[d_uv_index]
     else:
         return -10
 
 
-def faster_topology_reconstruction_through_dats_based_on_wtd(dats, wtd):
+def faster_topology_reconstruction_through_dats_based_on_wtd1(dats, wtd):
         CAS = len(dats)
         NODE_NUMBER = len(dats[0])
         probobility_matrix = np.zeros((NODE_NUMBER,NODE_NUMBER),dtype=float)
@@ -859,13 +1148,13 @@ def faster_topology_reconstruction_through_dats_based_on_wtd(dats, wtd):
             dat_sorted_list = sorted(dat.items(),key=lambda x: x[1], reverse=False)
             for i in range(NODE_NUMBER):
                 for j in range(i+1,NODE_NUMBER):
-                    adder = calculate_wtd_prob(dat,wtd,i,j,delta=0.01,l_t=5)
+                    adder = calculate_wtd_prob(dat, wtd,sf, i, j, delta=0.01, l_t=5)
                     probobility_matrix[i][j] += adder
                     probobility_matrix[j][i] += adder
 
         max_num = probobility_matrix.max()
         min_num = probobility_matrix.min()
-        print("max: ",max_num,"min:",min_num)
+        print("max: ", max_num, "min:", min_num)
         probobility_matrix *= 1/max_num
 
         for i in range(NODE_NUMBER):
@@ -877,6 +1166,64 @@ def faster_topology_reconstruction_through_dats_based_on_wtd(dats, wtd):
         return probobility_matrix
 
 
+
+def pdf_recover(dats,i,j,delta=0.01,l_t=5):
+    time_interval_list = []
+    out_off_range_count = 0
+    pdf_recover = [0 for i in range(int(l_t/delta/10))]
+    for dat in dats:
+        if int(abs((dat[i] - dat[j])/delta)) < 500:
+            time_interval_list.append(int(abs((dat[i] - dat[j])/delta)))
+        else:
+            out_off_range_count += 1
+
+    for dt in time_interval_list:
+        pdf_recover[dt//10] += 1
+    pdf_recover.append(out_off_range_count)
+    return pdf_recover
+
+
+
+def faster_topology_reconstruction_through_dats_based_on_wtd2(dats, wtd):
+    CAS = len(dats)
+    NODE_NUMBER = len(dats[0])
+    probobility_matrix = np.zeros((NODE_NUMBER, NODE_NUMBER), dtype=float)
+    time_aggregated_graph = nx.Graph()
+    sf = pdf2sf_using_density(wtd, delta=0.01)
+    cutting = 0.005
+    cutting_index = 0
+    for i in range(len(sf)):
+        if sf[i] < cutting:
+            cutting_index = i//10
+            break
+    print(cutting_index)
+    for i in range(NODE_NUMBER):
+        for j in range(i+1, NODE_NUMBER):
+            pdf_rcvr = pdf_recover(dats,i,j,delta=0.01,l_t=5)
+            if pdf_rcvr[50] > 1:
+                probobility_matrix[i][j] = float(-100)
+                probobility_matrix[j][i] = float(-100)
+            elif sum(pdf_rcvr[cutting_index:50]) > 1:
+                probobility_matrix[i][j] = float(-100)
+                probobility_matrix[j][i] = float(-100)
+            else:
+                probobility_matrix[i][j] = 1
+                probobility_matrix[j][i] = 1
+
+    max_num = probobility_matrix.max()
+    min_num = probobility_matrix.min()
+    print("max: ", max_num, "min:", min_num)
+    probobility_matrix *= 1 / max_num
+
+    for i in range(NODE_NUMBER):
+        for j in range(NODE_NUMBER):
+            if probobility_matrix[i][j] > 0.4:
+                probobility_matrix[i][j] = 1
+            else:
+                probobility_matrix[i][j] = 0
+    return probobility_matrix
+
+
 def count_in_matrix(m):
     count = 0
     for line in m:
@@ -886,6 +1233,35 @@ def count_in_matrix(m):
     return count
 
 
+def rapid_recstrct_network_test():
+    file_name = ["data/scalefree.txt","data/polbooks.txt","data/football.txt","data/apollonian.txt","data/dolphins.txt","data/karate.txt","data/lattice2d.txt","data/miserables.txt","data/pseudofractal.txt","data/randomgraph.txt","data/scalefree.txt","data/sierpinski.txt","data/smallworld.txt","data/jazz.txt"]
+    for name in file_name:
+        demo_graph, node_number, edge_number = open_file_data_graph(name)
+
+        # demo_graph, node_number, edge_number = demo_graph_generator()
+        print(name, "  graph || nodes:", node_number, "; edges:", edge_number)
+        print("average shortest path length: ", nx.average_shortest_path_length(demo_graph))
+        print("average clustering coef: ", nx.average_clustering(demo_graph))
+        # generate data arrival times(dats), also dat_path.
+        # set dat_number to control the total number of dat.
+        dats, dat_path = dats_generator(demo_graph, dat_number=int(node_number), seed=False)
+        discrete_wtd, discrete_mass = pdf_generator(mode="exponential")
+        adj_mat = faster_topology_reconstruction_through_dats_based_on_wtd2(dats, discrete_wtd)
+        tp_fp = count_in_matrix(adj_mat) / 2
+        TP = FN = FP = TN = 0
+        edge_total = node_number*(node_number-1)/2
+
+        for edge in demo_graph.edges():
+            if adj_mat[edge[0]][edge[1]] == 1:
+                TP += 1
+            else:
+                FN += 1
+        FP = tp_fp - TP
+        TN = edge_total - TP - FN - FP
+        print(TP,FP,TN,FN)
+        print("TPR: ", TP / (TP+FN), "FPR:", FP / (FP+TN))
+        print("Precision: ",TP/(TP+FP), "Recall: ",TP/(TP+FN))
+        print("------------------------------------------------")
 
 if __name__ == "__main__":
     print("module: stn_reconstruction_lib")
