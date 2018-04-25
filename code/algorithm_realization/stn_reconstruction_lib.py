@@ -6,6 +6,56 @@ import matplotlib.pyplot as plt
 import math
 
 
+def networkx_graph_generator(mode="ER"):
+    if mode == "ER":
+        return er_graph_generator(node_number=100,link_probability=0.06,seed=None,directed=False)
+    if mode == "BA":
+        return ba_graph_generator(n=100,m=4,seed=None,directed=False)
+    if mode =="SW":
+        return sw_graph_generator(n=100,k=6,p=0.05,seed=None,directed=False)
+
+
+def ba_graph_generator(n=100,m=6,seed=None,directed=False):
+    # this function returns a ER random graph with input node number and edge link probability.
+    # "seed" parameter is the random seed.Fixing it will let your graph fixed every time you run the function.
+    # this funtion calls a networkx funtion "nx.erdos_renyi_graph()"
+
+    ba_graph = nx.barabasi_albert_graph(n=n, m=m, seed=seed)
+    if not directed:
+        weighted_er_graph = nx.Graph()
+    elif directed:
+        weighted_er_graph = nx.DiGraph()
+
+    for edge in ba_graph.edges():
+        weighted_er_graph.add_edge(edge[0], edge[1], weight=1)
+        # weighted_er_graph is used to generate the DATs in the following dat_generator() method which uses the Dijstra Algorithm to calculate the shortest distances of each nodes in the diffusion process.
+
+    node_number = len(weighted_er_graph.nodes())
+    edge_number = len(weighted_er_graph.edges())
+
+    return weighted_er_graph, node_number, edge_number
+
+
+def sw_graph_generator(n=100,k=6,p=0.05,seed=None,directed=False):
+    # this function returns a ER random graph with input node number and edge link probability.
+    # "seed" parameter is the random seed.Fixing it will let your graph fixed every time you run the function.
+    # this funtion calls a networkx funtion "nx.erdos_renyi_graph()"
+
+    sw_graph = nx.watts_strogatz_graph(n=n, k=k, p=p, seed=seed)
+    if not directed:
+        weighted_er_graph = nx.Graph()
+    elif directed:
+        weighted_er_graph = nx.DiGraph()
+
+    for edge in sw_graph.edges():
+        weighted_er_graph.add_edge(edge[0], edge[1], weight=1)
+        # weighted_er_graph is used to generate the DATs in the following dat_generator() method which uses the Dijstra Algorithm to calculate the shortest distances of each nodes in the diffusion process.
+
+    node_number = len(weighted_er_graph.nodes())
+    edge_number = len(weighted_er_graph.edges())
+
+    return weighted_er_graph, node_number, edge_number
+
 def er_graph_generator(node_number=100, link_probability=0.06, seed=None, directed=False):
     # this function returns a ER random graph with input node number and edge link probability.
     # "seed" parameter is the random seed.Fixing it will let your graph fixed every time you run the function.
@@ -99,7 +149,7 @@ def DAT_generator(graph_topology, wtd_array, diffusive_source):
     return DAT, DAT_PATH
 
 
-def dats_generator(graph_topology, dat_number=1, seed=True):
+def dats_generator(graph_topology, mode, dat_number,l_t=5, seed=True):
     # This function returns the list of DATs.
     # dat_number is the number of DAT that you want.
     # You can set seed=True if you want the dats is always fixed whenever you run the sampling code.
@@ -122,13 +172,49 @@ def dats_generator(graph_topology, dat_number=1, seed=True):
         # wtd_array = np.random.normal(1, 0.4, length)
         j = 0
         wtd_array = list()
-        while j < length:
-            num = np.random.normal(2.5, 0.2)
-            # num = np.random.beta(0.5,0.5)*5
-            if num > 0:
-                wtd_array.append(num)
-                j += 1
-
+        if mode == "gaussian":
+            while j < length:
+                num = np.random.normal(2.5, 0.2)
+                # num = np.random.beta(0.5,0.5)*5
+                if 0 < num < 5:
+                    wtd_array.append(num)
+                    j += 1
+        elif mode == "exponential":
+            while j < length:
+                num = np.random.exponential(scale=1)
+                if 0 < num < 5:
+                    wtd_array.append(num)
+                    j += 1
+        elif mode == "uniform":
+            while j < length:
+                num = np.random.uniform(low=1,high=3)
+                if 0 < num < 5:
+                    wtd_array.append(num)
+                    j += 1
+        elif mode == "gumbel":
+            while j < length:
+                num = np.random.gumbel(loc=1.5,scale=0.3)
+                if 0 < num < 5:
+                    wtd_array.append(num)
+                    j += 1
+        elif mode == "weibull":
+            while j < length:
+                num = np.random.weibull(a=4)
+                if 0 < num < 5:
+                    wtd_array.append(num)
+                    j += 1
+        elif mode == "poisson":
+            while j < length:
+                num = np.random.poisson(lam=2)
+                if 0 < num < 5:
+                    wtd_array.append(num)
+                    j += 1
+        elif mode == "gamma":
+            while j < length:
+                num = np.random.standard_gamma(2)
+                if 0 < num < 5:
+                    wtd_array.append(num)
+                    j += 1
         # Use the function DAT_generator() to create each DAT and DAT_PATH.
         dat_temp, dat_path_temp = DAT_generator(graph_topology, wtd_array, diffusive_source)
         dat.append(dat_temp)
@@ -558,7 +644,7 @@ def pdf_generator(mode="gaussian",delta=0.01,l_t=5):
     elif mode == "uniform":
         return uniform_pdf_generate(a=1,b=3,l_t=l_t,delta=delta)
     elif mode == "gumbel":
-        return gumbel_pdf_generate(a=3,b=2,l_t=l_t,delta=delta)
+        return gumbel_pdf_generate(a=1.5,b=0.3,l_t=l_t,delta=delta)
     elif mode == "beta":
         return beta_pdf_generate(a=9,b=2,l_t=l_t,delta=delta)
     elif mode == "bimodal":
@@ -569,6 +655,57 @@ def pdf_generator(mode="gaussian",delta=0.01,l_t=5):
         pass
     elif mode == "exponential":
         return exponential_pdf_generate(b=1,l_t=l_t,delta=delta)
+
+
+def random_sample_recover(mode="gaussian",l_t=5):
+    length = 10000
+    wtd_array = list()
+    j = 0
+    if mode == "gaussian":
+        while j < length:
+            num = np.random.normal(2.5, 0.2)
+            # num = np.random.beta(0.5,0.5)*5
+            if 0< num <5:
+                wtd_array.append(num)
+                j += 1
+    elif mode == "exponential":
+        while j < length:
+            num = np.random.exponential(scale=1)
+            if 0 < num < 5:
+                wtd_array.append(num)
+                j += 1
+    elif mode == "uniform":
+        while j < length:
+            num = np.random.uniform(low=1, high=3)
+            if 0 < num < 5:
+                wtd_array.append(num)
+                j += 1
+    elif mode == "gumbel":
+        while j < length:
+            num = np.random.gumbel(1.5,0.3)
+            if 0 < num < 5:
+                wtd_array.append(num)
+                j += 1
+    elif mode == "weibull":
+        while j < length:
+            num = np.random.weibull(5)
+            if 0 < num < 5:
+                wtd_array.append(num)
+                j += 1
+    elif mode == "poisson":
+        while j < length:
+            num = np.random.poisson(lam=2)
+            if 0 < num < 5:
+                wtd_array.append(num)
+                j += 1
+    elif mode == "gamma":
+        while j < length:
+            num = np.random.standard_gamma(2)
+            if 0 < num < 5:
+                wtd_array.append(num)
+                j += 1
+    pdf_rcvr = pdf_recover_from_list(wtd_array)
+    return pdf_rcvr
 
 
 def jshape_pdf_generate(a=0.3,b=4,c=0.5,l_t=5,delta=0.01):
@@ -597,7 +734,7 @@ def jshape_pdf_generate(a=0.3,b=4,c=0.5,l_t=5,delta=0.01):
     # we return both of them for the convenience of further calculation.
 
     # the x-axis begins from 1, that is {1,2,...,l_t}, but note that the index of the "list" starts from 0.
-    return discrete_wtd, discrete_mass
+    return discrete_wtd
 
 
 def beta_pdf_generate(a=9,b=2,l_t=5,delta=0.01):
@@ -625,7 +762,7 @@ def beta_pdf_generate(a=9,b=2,l_t=5,delta=0.01):
     # we return both of them for the convenience of further calculation.
 
     # the x-axis begins from 1, that is {1,2,...,l_t}, but note that the index of the "list" starts from 0.
-    return discrete_wtd, discrete_mass
+    return discrete_wtd
 
 
 def bimodal_pdf_generate(a1=2,a2=9,b1=8,b2=3,l_t=5,delta=0.01):
@@ -649,7 +786,7 @@ def bimodal_pdf_generate(a1=2,a2=9,b1=8,b2=3,l_t=5,delta=0.01):
     # we return both of them for the convenience of further calculation.
 
     # the x-axis begins from 1, that is {1,2,...,l_t}, but note that the index of the "list" starts from 0.
-    return discrete_wtd, discrete_mass
+    return discrete_wtd
 
 
 def pareto_pdf_generate(a=0.3,b=0.5,l_t=5,delta=0.01):
@@ -680,10 +817,10 @@ def pareto_pdf_generate(a=0.3,b=0.5,l_t=5,delta=0.01):
     # we return both of them for the convenience of further calculation.
 
     # the x-axis begins from 1, that is {1,2,...,l_t}, but note that the index of the "list" starts from 0.
-    return discrete_wtd, discrete_mass
+    return discrete_wtd
 
 
-def exponential_pdf_generate(a=3,b=2,l_t=5,delta=0.01):
+def exponential_pdf_generate(b=1,l_t=5,delta=0.01):
     discrete_wtd = list()
     discrete_mass = list()
     discrete_number = int(l_t / delta)
@@ -707,10 +844,10 @@ def exponential_pdf_generate(a=3,b=2,l_t=5,delta=0.01):
     # we return both of them for the convenience of further calculation.
 
     # the x-axis begins from 1, that is {1,2,...,l_t}, but note that the index of the "list" starts from 0.
-    return discrete_wtd, discrete_mass
+    return discrete_wtd
 
 
-def gumbel_pdf_generate(a=3,b=2,l_t=5,delta=0.01):
+def gumbel_pdf_generate(a=1.5,b=0.3,l_t=5,delta=0.01):
     discrete_wtd = list()
     discrete_mass = list()
     discrete_number = int(l_t / delta)
@@ -719,7 +856,7 @@ def gumbel_pdf_generate(a=3,b=2,l_t=5,delta=0.01):
     for i in range(1,discrete_number):
         x = i * delta
         # here to change the formula of the distribution
-        discrete_wtd.append(a*b*(x**(-a-1))*np.exp(-b*(x**(-a))))
+        discrete_wtd.append(1/b*np.exp(-(x-a)/b)*np.exp(-np.exp(-(x-a)/b)))
         discrete_mass.append(discrete_wtd[i] * delta)
     # scatter_wtd(discrete_mass)
     # scatter_wtd(discrete_wtd)
@@ -736,7 +873,7 @@ def gumbel_pdf_generate(a=3,b=2,l_t=5,delta=0.01):
     # we return both of them for the convenience of further calculation.
 
     # the x-axis begins from 1, that is {1,2,...,l_t}, but note that the index of the "list" starts from 0.
-    return discrete_wtd, discrete_mass
+    return discrete_wtd
 
 
 def weibull_pdf_generate(a=1,b=2.5,l_t=5,delta=0.01):
@@ -763,7 +900,7 @@ def weibull_pdf_generate(a=1,b=2.5,l_t=5,delta=0.01):
     # we return both of them for the convenience of further calculation.
 
     # the x-axis begins from 1, that is {1,2,...,l_t}, but note that the index of the "list" starts from 0.
-    return discrete_wtd, discrete_mass
+    return discrete_wtd
 
 
 def gaussian_pdf_generate(miu=2.5,sigma=0.2,l_t=5,delta=0.01):
@@ -790,7 +927,7 @@ def gaussian_pdf_generate(miu=2.5,sigma=0.2,l_t=5,delta=0.01):
     # we return both of them for the convenience of further calculation.
 
     # the x-axis begins from 1, that is {1,2,...,l_t}, but note that the index of the "list" starts from 0.
-    return discrete_wtd, discrete_mass
+    return discrete_wtd
 
 
 def uniform_pdf_generate(a=1,b=3,l_t=5,delta=0.01):
@@ -821,7 +958,7 @@ def uniform_pdf_generate(a=1,b=3,l_t=5,delta=0.01):
     # we return both of them for the convenience of further calculation.
 
     # the x-axis begins from 1, that is {1,2,...,l_t}, but note that the index of the "list" starts from 0.
-    return discrete_wtd, discrete_mass
+    return discrete_wtd
 
 
 def continuous_func_distribution2discrete(delta=0.01, l_t=5):
@@ -850,7 +987,7 @@ def continuous_func_distribution2discrete(delta=0.01, l_t=5):
     # we return both of them for the convenience of further calculation.
 
     # the x-axis begins from 1, that is {1,2,...,l_t}, but note that the index of the "list" starts from 0.
-    return discrete_wtd, discrete_mass
+    return discrete_wtd
 
 
 def continuous_exp_distribution2discrete_using_integration(delta, l_t, miu=1):
@@ -871,7 +1008,7 @@ def continuous_exp_distribution2discrete_using_integration(delta, l_t, miu=1):
 
     # discrete_wtd is a list of the discrete point of WTD.for example, list[1] = exp(delta), list[n] = exp(delta * n)
     # discrete_mass is the list of mass of each small section.
-    return discrete_wtd, discrete_mass
+    return discrete_wtd
 
 
 def continuous_gaussian_distribution2discrete_using_integration(delta, l_t, miu=2, sigma=0.4):
@@ -891,7 +1028,7 @@ def continuous_gaussian_distribution2discrete_using_integration(delta, l_t, miu=
     # if there is something needed, it must be the normalization step, which makes the sum of discrete_mass equals to 1.
     # discrete_wtd is a list of the discrete point of WTD.for example, list[1] = exp(delta), list[n] = exp(delta * n)
     # discrete_mass is the list of mass of each small section.
-    return discrete_wtd, discrete_mass
+    return discrete_wtd
 
 
 def pdf2sf_using_mass(discrete_mass):
@@ -1166,7 +1303,6 @@ def faster_topology_reconstruction_through_dats_based_on_wtd1(dats, wtd):
         return probobility_matrix
 
 
-
 def pdf_recover(dats,i,j,delta=0.01,l_t=5):
     time_interval_list = []
     out_off_range_count = 0
@@ -1182,6 +1318,18 @@ def pdf_recover(dats,i,j,delta=0.01,l_t=5):
     pdf_recover.append(out_off_range_count)
     return pdf_recover
 
+def pdf_recover_from_list(list, l_t=5, delta=0.01):
+    time_interval_list = []
+    out_off_range_count = 0
+    pdf_recover = [0 for i in range(int(l_t / delta / 10))]
+
+    for d_uv in list:
+        if d_uv < l_t:
+            pdf_recover[int(d_uv*100 / 10)] += 1
+        else:
+            out_off_range_count += 1
+    pdf_recover.append(out_off_range_count)
+    return pdf_recover
 
 
 def faster_topology_reconstruction_through_dats_based_on_wtd2(dats, wtd):
@@ -1197,6 +1345,7 @@ def faster_topology_reconstruction_through_dats_based_on_wtd2(dats, wtd):
             cutting_index = i//10
             break
     print(cutting_index)
+    cutting_index = 15
     for i in range(NODE_NUMBER):
         for j in range(i+1, NODE_NUMBER):
             pdf_rcvr = pdf_recover(dats,i,j,delta=0.01,l_t=5)
@@ -1224,6 +1373,28 @@ def faster_topology_reconstruction_through_dats_based_on_wtd2(dats, wtd):
     return probobility_matrix
 
 
+def large_scale_network_reconstruction(node_number=100):
+    demo_graph, node_number, edge_number = er_graph_generator(node_number=node_number,link_probability=0.03,)
+    dats, dat_path = dats_generator(demo_graph, dat_number=int(300), seed=False)
+    discrete_wtd, discrete_mass = pdf_generator(mode="gaussian")
+    adj_mat = faster_topology_reconstruction_through_dats_based_on_wtd2(dats, discrete_wtd)
+    tp_fp = count_in_matrix(adj_mat) / 2
+    TP = FN = FP = TN = 0
+    edge_total = node_number * (node_number - 1) / 2
+
+    for edge in demo_graph.edges():
+        if adj_mat[edge[0]][edge[1]] == 1:
+            TP += 1
+        else:
+            FN += 1
+    FP = tp_fp - TP
+    TN = edge_total - TP - FN - FP
+    print(TP, FP, TN, FN)
+    print("TPR: ", TP / (TP + FN), "FPR:", FP / (FP + TN))
+    print("Precision: ", TP / (TP + FP), "Recall: ", TP / (TP + FN))
+    print("------------------------------------------------")
+
+
 def count_in_matrix(m):
     count = 0
     for line in m:
@@ -1234,7 +1405,9 @@ def count_in_matrix(m):
 
 
 def rapid_recstrct_network_test():
-    file_name = ["data/scalefree.txt","data/polbooks.txt","data/football.txt","data/apollonian.txt","data/dolphins.txt","data/karate.txt","data/lattice2d.txt","data/miserables.txt","data/pseudofractal.txt","data/randomgraph.txt","data/scalefree.txt","data/sierpinski.txt","data/smallworld.txt","data/jazz.txt"]
+    #file_name = ["data/scalefree.txt","data/polbooks.txt","data/football.txt","data/apollonian.txt","data/dolphins.txt","data/karate.txt","data/lattice2d.txt","data/miserables.txt","data/pseudofractal.txt","data/randomgraph.txt","data/scalefree.txt","data/sierpinski.txt","data/smallworld.txt","data/jazz.txt"]
+    file_name = ["data/scalefree.txt","data/randomgraph.txt","data/smallworld.txt"]
+    file_name = ["../"+x for x in file_name]
     for name in file_name:
         demo_graph, node_number, edge_number = open_file_data_graph(name)
 
@@ -1244,8 +1417,8 @@ def rapid_recstrct_network_test():
         print("average clustering coef: ", nx.average_clustering(demo_graph))
         # generate data arrival times(dats), also dat_path.
         # set dat_number to control the total number of dat.
-        dats, dat_path = dats_generator(demo_graph, dat_number=int(node_number), seed=False)
-        discrete_wtd, discrete_mass = pdf_generator(mode="exponential")
+        dats, dat_path = dats_generator(demo_graph, mode="weibull",dat_number=int(node_number), seed=False)
+        discrete_wtd = pdf_generator(mode="weibull")
         adj_mat = faster_topology_reconstruction_through_dats_based_on_wtd2(dats, discrete_wtd)
         tp_fp = count_in_matrix(adj_mat) / 2
         TP = FN = FP = TN = 0
