@@ -9,7 +9,7 @@ if __name__ == "__main__":
     # generate data arrival times(dats), also dat_path.
     # set dat_number to control the total number of dat.
     dats, dat_path = dats_generator(demo_graph,mode="gaussian",dat_number=40, seed=True)
-    discrete_wtd, discrete_mass = continuous_func_distribution2discrete()
+    discrete_wtd = continuous_func_distribution2discrete()
     adj_mat = faster_topology_reconstruction_through_dats_based_on_wtd1(dats, discrete_wtd)
     edge_count = count_in_matrix(adj_mat)/2
     t = f = 0

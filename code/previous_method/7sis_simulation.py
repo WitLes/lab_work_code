@@ -351,6 +351,6 @@ def sis_recover(node_state_dict, infected_node_dict, recover_rate):
             print("recover: ", recover_node)
 
 
-data = read_workspace_dataset("data/dataset_workspace.dat")
+data = read_workspace_dataset("../data/workplace.txt")
 
 sis_simulation_method_oneStep(data, 17, 20)

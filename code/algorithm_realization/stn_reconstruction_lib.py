@@ -209,9 +209,15 @@ def dats_generator(graph_topology, mode, dat_number,l_t=5, seed=True):
                 if 0 < num < 5:
                     wtd_array.append(num)
                     j += 1
-        elif mode == "gamma":
+        elif mode == "beta":
             while j < length:
-                num = np.random.standard_gamma(2)
+                num = np.random.beta(9,2)*l_t
+                if 0 < num < 5:
+                    wtd_array.append(num)
+                    j += 1
+        elif mode == "bimodal":
+            while j < length:
+                num = np.random.beta(9,2)*l_t
                 if 0 < num < 5:
                     wtd_array.append(num)
                     j += 1
@@ -222,7 +228,6 @@ def dats_generator(graph_topology, mode, dat_number,l_t=5, seed=True):
         # print(dat_path_temp)
 
     return dat, dat_path
-
 
 def draw_diffusion_tree(diffusive_arrival_times, type=0):
     # Not used.
@@ -645,8 +650,8 @@ def pdf_generator(mode="gaussian",delta=0.01,l_t=5):
         return uniform_pdf_generate(a=1,b=3,l_t=l_t,delta=delta)
     elif mode == "gumbel":
         return gumbel_pdf_generate(a=1.5,b=0.3,l_t=l_t,delta=delta)
-    elif mode == "beta":
-        return beta_pdf_generate(a=9,b=2,l_t=l_t,delta=delta)
+    #elif mode == "beta":
+     #   return beta_pdf_generate(a=9,b=2,l_t=l_t,delta=delta)
     elif mode == "bimodal":
         return bimodal_pdf_generate(a1=2,a2=9,b1=8,b2=3,l_t=l_t,delta=delta)
     elif mode == "pareto":
@@ -655,6 +660,38 @@ def pdf_generator(mode="gaussian",delta=0.01,l_t=5):
         pass
     elif mode == "exponential":
         return exponential_pdf_generate(b=1,l_t=l_t,delta=delta)
+    elif mode =="beta":
+        return beta_pdf_generate(l_t=l_t,delta=delta)
+
+
+def gamma_pdf_generate(l_t,delta):
+
+
+    discrete_wtd = list()
+    discrete_mass = list()
+    discrete_number = int(l_t / delta)
+
+    for i in range(discrete_number):
+        x = i/discrete_number
+        # here to change the formula of the distribution
+        discrete_wtd.append(math.beta(x))
+        discrete_mass.append(discrete_wtd[i] * delta)
+    # scatter_wtd(discrete_mass)
+    # scatter_wtd(discrete_wtd)
+
+    # normalization
+    mass_sum = sum(discrete_mass)
+    discrete_mass = [x / mass_sum for x in discrete_mass]
+    discrete_wtd = [x / mass_sum for x in discrete_wtd]
+    # scatter_wtd(discrete_mass)
+    # scatter_wtd(discrete_wtd)
+
+    # discrete_wtd is a list of the discrete point of WTD.for example, list[1] = exp(delta), list[n] = exp(delta * n)
+    # discrete_mass is the list of mass of each small section.
+    # we return both of them for the convenience of further calculation.
+
+    # the x-axis begins from 1, that is {1,2,...,l_t}, but note that the index of the "list" starts from 0.
+    return discrete_wtd
 
 
 def random_sample_recover(mode="gaussian",l_t=5):
@@ -698,15 +735,18 @@ def random_sample_recover(mode="gaussian",l_t=5):
             if 0 < num < 5:
                 wtd_array.append(num)
                 j += 1
-    elif mode == "gamma":
+    elif mode == "beta":
         while j < length:
-            num = np.random.standard_gamma(2)
+            num = np.random.beta(9,2)*l_t
             if 0 < num < 5:
                 wtd_array.append(num)
                 j += 1
     pdf_rcvr = pdf_recover_from_list(wtd_array)
     return pdf_rcvr
 
+
+def beta():
+    math.gamma(a + b) / (math.gamma(a) * math.gamma(b)) * (x ** (a - 1)) * ((1 - x) ** (b - 1))
 
 def jshape_pdf_generate(a=0.3,b=4,c=0.5,l_t=5,delta=0.01):
     # under working
@@ -743,7 +783,6 @@ def beta_pdf_generate(a=9,b=2,l_t=5,delta=0.01):
     discrete_number = int(l_t / delta)
     for i in range(0,discrete_number):
         x = i * delta/l_t
-        print(x)
         # here to change the formula of the distribution
         discrete_wtd.append(math.gamma(a+b)/(math.gamma(a)*math.gamma(b))*(x**(a-1))*((1-x)**(b-1)))
         discrete_mass.append(discrete_wtd[i] * delta)
@@ -770,11 +809,11 @@ def bimodal_pdf_generate(a1=2,a2=9,b1=8,b2=3,l_t=5,delta=0.01):
     discrete_mass = list()
     discrete_number = int(l_t / delta)
     # normalization
-    beta1_wtd,beta1_mass = beta_pdf_generate(a1,b1,l_t,delta)
-    beta2_wtd,beta2_mass = beta_pdf_generate(a2, b2, l_t, delta)
+    beta1_wtd = beta_pdf_generate(a1,b1,l_t,delta)
+    beta2_wtd= beta_pdf_generate(a2, b2, l_t, delta)
     for i in range(discrete_number):
         discrete_wtd.append(beta1_wtd[i] + beta2_wtd[i])
-        discrete_mass.append(beta1_mass[i] + beta2_mass[i])
+        discrete_mass.append((beta1_wtd[i] + beta2_wtd[i])*delta)
     mass_sum = sum(discrete_mass)
     discrete_mass = [x / mass_sum for x in discrete_mass]
     discrete_wtd = [x / mass_sum for x in discrete_wtd]
@@ -787,7 +826,6 @@ def bimodal_pdf_generate(a1=2,a2=9,b1=8,b2=3,l_t=5,delta=0.01):
 
     # the x-axis begins from 1, that is {1,2,...,l_t}, but note that the index of the "list" starts from 0.
     return discrete_wtd
-
 
 def pareto_pdf_generate(a=0.3,b=0.5,l_t=5,delta=0.01):
     discrete_wtd = list()
@@ -1332,20 +1370,12 @@ def pdf_recover_from_list(list, l_t=5, delta=0.01):
     return pdf_recover
 
 
-def faster_topology_reconstruction_through_dats_based_on_wtd2(dats, wtd):
+def faster_topology_reconstruction_through_dats_based_on_wtd2(dats, wtd,cutting_index=30):
     CAS = len(dats)
     NODE_NUMBER = len(dats[0])
     probobility_matrix = np.zeros((NODE_NUMBER, NODE_NUMBER), dtype=float)
     time_aggregated_graph = nx.Graph()
     sf = pdf2sf_using_density(wtd, delta=0.01)
-    cutting = 0.005
-    cutting_index = 0
-    for i in range(len(sf)):
-        if sf[i] < cutting:
-            cutting_index = i//10
-            break
-    print(cutting_index)
-    cutting_index = 15
     for i in range(NODE_NUMBER):
         for j in range(i+1, NODE_NUMBER):
             pdf_rcvr = pdf_recover(dats,i,j,delta=0.01,l_t=5)
@@ -1361,7 +1391,6 @@ def faster_topology_reconstruction_through_dats_based_on_wtd2(dats, wtd):
 
     max_num = probobility_matrix.max()
     min_num = probobility_matrix.min()
-    print("max: ", max_num, "min:", min_num)
     probobility_matrix *= 1 / max_num
 
     for i in range(NODE_NUMBER):
@@ -1419,7 +1448,7 @@ def rapid_recstrct_network_test():
         # set dat_number to control the total number of dat.
         dats, dat_path = dats_generator(demo_graph, mode="weibull",dat_number=int(node_number), seed=False)
         discrete_wtd = pdf_generator(mode="weibull")
-        adj_mat = faster_topology_reconstruction_through_dats_based_on_wtd2(dats, discrete_wtd)
+        adj_mat = faster_topology_reconstruction_through_dats_based_on_wtd2(dats, discrete_wtd,cutting_index=30)
         tp_fp = count_in_matrix(adj_mat) / 2
         TP = FN = FP = TN = 0
         edge_total = node_number*(node_number-1)/2

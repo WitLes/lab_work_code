@@ -262,7 +262,7 @@ dat, parent_node_dict = triple_diffusing_method2_multiStepEachTimestamp(data, so
 dat_path = find_path(parent_node_dict, source)
 '''
 
-data = read_high_school_2013_dataset("data/dataset_high_school_2013.csv")
+data = read_high_school_2013_dataset("../data/high2013.txt")
 dat, parent_node_dict = triple_diffusing_method1(data,source)
 dat_path = find_path(parent_node_dict,source)
 

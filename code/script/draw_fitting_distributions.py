@@ -2,14 +2,14 @@ from algorithm_realization.stn_reconstruction_lib import *
 import scipy.interpolate as interpolate
 
 mode_list = ["ER","BA","SW"]
-distribution_list = ["gaussian","uniform","weibull", "gumbel"]
-mode_select = mode_list[2]
-distribution_select = distribution_list[3]
+distribution_list = ["gaussian","uniform","weibull", "gumbel","exponential","beta"]
+mode_select = mode_list[1]
+distribution_select = distribution_list[5]
 
 
 demo_graph, node_number, edge_number = networkx_graph_generator(mode=mode_select)
 
-dats, dat_path = dats_generator(demo_graph, mode=distribution_select, dat_number=10*node_number, seed=False)
+dats, dat_path = dats_generator(demo_graph, mode=distribution_select, dat_number=node_number, seed=False)
 l_t = 5
 delta = 0.01
 all_edge_duv_time_list = list()
