@@ -1,3 +1,3 @@
 from algorithm_realization.stn_reconstruction_lib import *
 
-large_scale_network_reconstruction(node_number=500)
+rapid_recstrct_network_test()

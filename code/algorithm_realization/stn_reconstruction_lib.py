@@ -10,12 +10,12 @@ def networkx_graph_generator(mode="ER"):
     if mode == "ER":
         return er_graph_generator(node_number=100,link_probability=0.06,seed=None,directed=False)
     if mode == "BA":
-        return ba_graph_generator(n=100,m=4,seed=None,directed=False)
+        return ba_graph_generator(n=100,m=2,seed=None,directed=False)
     if mode =="SW":
         return sw_graph_generator(n=100,k=6,p=0.05,seed=None,directed=False)
 
 
-def ba_graph_generator(n=100,m=6,seed=None,directed=False):
+def ba_graph_generator(n=100,m=3,seed=None,directed=False):
     # this function returns a ER random graph with input node number and edge link probability.
     # "seed" parameter is the random seed.Fixing it will let your graph fixed every time you run the function.
     # this funtion calls a networkx funtion "nx.erdos_renyi_graph()"
@@ -1434,8 +1434,8 @@ def count_in_matrix(m):
 
 
 def rapid_recstrct_network_test():
-    #file_name = ["data/scalefree.txt","data/polbooks.txt","data/football.txt","data/apollonian.txt","data/dolphins.txt","data/karate.txt","data/lattice2d.txt","data/miserables.txt","data/pseudofractal.txt","data/randomgraph.txt","data/scalefree.txt","data/sierpinski.txt","data/smallworld.txt","data/jazz.txt"]
-    file_name = ["data/scalefree.txt","data/randomgraph.txt","data/smallworld.txt"]
+    file_name = ["data/scalefree.txt","data/polbooks.txt","data/football.txt","data/apollonian.txt","data/dolphins.txt","data/karate.txt","data/lattice2d.txt","data/miserables.txt","data/pseudofractal.txt","data/randomgraph.txt","data/scalefree.txt","data/sierpinski.txt","data/smallworld.txt","data/jazz.txt"]
+    #file_name = ["data/scalefree.txt","data/randomgraph.txt","data/smallworld.txt"]
     file_name = ["../"+x for x in file_name]
     for name in file_name:
         demo_graph, node_number, edge_number = open_file_data_graph(name)
@@ -1446,9 +1446,9 @@ def rapid_recstrct_network_test():
         print("average clustering coef: ", nx.average_clustering(demo_graph))
         # generate data arrival times(dats), also dat_path.
         # set dat_number to control the total number of dat.
-        dats, dat_path = dats_generator(demo_graph, mode="weibull",dat_number=int(node_number), seed=False)
-        discrete_wtd = pdf_generator(mode="weibull")
-        adj_mat = faster_topology_reconstruction_through_dats_based_on_wtd2(dats, discrete_wtd,cutting_index=30)
+        dats, dat_path = dats_generator(demo_graph, mode="gaussian",dat_number=int(node_number), seed=False)
+        discrete_wtd = pdf_generator(mode="gaussian")
+        adj_mat = faster_topology_reconstruction_through_dats_based_on_wtd2(dats, discrete_wtd,cutting_index=35)
         tp_fp = count_in_matrix(adj_mat) / 2
         TP = FN = FP = TN = 0
         edge_total = node_number*(node_number-1)/2
