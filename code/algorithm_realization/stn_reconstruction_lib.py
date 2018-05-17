@@ -1402,11 +1402,16 @@ def faster_topology_reconstruction_through_dats_based_on_wtd2(dats, wtd,cutting_
     return probobility_matrix
 
 
-def large_scale_network_reconstruction(node_number=100):
-    demo_graph, node_number, edge_number = er_graph_generator(node_number=node_number,link_probability=0.03,)
-    dats, dat_path = dats_generator(demo_graph, dat_number=int(300), seed=False)
-    discrete_wtd, discrete_mass = pdf_generator(mode="gaussian")
-    adj_mat = faster_topology_reconstruction_through_dats_based_on_wtd2(dats, discrete_wtd)
+def large_scale_network_reconstruction(node_number=100,link_probability=0.06,C=0.5,cutting_index=29):
+    demo_graph, node_number, edge_number = er_graph_generator(node_number=node_number,link_probability=link_probability)
+    distribution_mode = "gaussian"
+    dats, dat_path = dats_generator(demo_graph,mode=distribution_mode, dat_number=int(C*node_number), seed=False)
+    discrete_wtd = pdf_generator(mode=distribution_mode)
+    print("ER  ", "graph || nodes:", node_number, "; edges:", edge_number)
+    print(distribution_mode)
+    print("average shortest path length: ", nx.average_shortest_path_length(demo_graph))
+    print("average clustering coef: ", nx.average_clustering(demo_graph))
+    adj_mat = faster_topology_reconstruction_through_dats_based_on_wtd2(dats, discrete_wtd,cutting_index=cutting_index)
     tp_fp = count_in_matrix(adj_mat) / 2
     TP = FN = FP = TN = 0
     edge_total = node_number * (node_number - 1) / 2
@@ -1419,10 +1424,15 @@ def large_scale_network_reconstruction(node_number=100):
     FP = tp_fp - TP
     TN = edge_total - TP - FN - FP
     print(TP, FP, TN, FN)
+    TPR = TP / (TP + FN)
+    FPR = FP / (FP + TN)
+    Precision = TP / (TP + FP)
+    Recall = TP / (TP + FN)
+    F1 = 2*Precision*Recall/(Precision + Recall)
     print("TPR: ", TP / (TP + FN), "FPR:", FP / (FP + TN))
     print("Precision: ", TP / (TP + FP), "Recall: ", TP / (TP + FN))
     print("------------------------------------------------")
-
+    return F1
 
 def count_in_matrix(m):
     count = 0
