@@ -1,8 +1,9 @@
 from algorithm_realization.stn_reconstruction_lib import *
 
 
-node_number = 200
-link_probability = 0.04
+node_number = 1500
+link_probability = 0.005
+pop_percent = 7
 demo_graph, node_number, edge_number = er_graph_generator(node_number=node_number,link_probability=link_probability)
 
 print("ER  ", "graph || nodes:", node_number, "; edges:", edge_number)
@@ -34,17 +35,23 @@ def large_scale_network_reconstruction_for_script(node_number,link_probability,C
     return F1
 
 
-c_list = [float(i/20) for i in range(20)]
-for i in range(2):
+c_list = [float(i/50) for i in range(50)]
+final_c_list = []
+for i in range(1):
     c_list.pop(0)
-cutting_index_list = [28,29,30,31]
 
-for c in c_list:
-    f1_list = []
-    print(".",end='',flush=True)
-    for cutting in cutting_index_list:
-        f1_list.append(large_scale_network_reconstruction_for_script(node_number=node_number,link_probability=link_probability,C=c,cutting_index=cutting))
-    if max(f1_list) > 0.95:
-        final_c = c
-        break
-print(final_c)
+cutting_index_list = [28,29,30,31]
+for k in range(10):
+    print("\n")
+    final_c = 0
+    for c in c_list:
+        f1_list = []
+        print(".",end='',flush=True)
+        for cutting in cutting_index_list:
+            f1_list.append(large_scale_network_reconstruction_for_script(node_number=node_number,link_probability=link_probability,C=c,cutting_index=cutting))
+        if max(f1_list) > 0.95:
+            final_c = c
+            break
+    final_c_list.append(final_c)
+
+print(final_c_list,sum(final_c_list)/len(final_c_list))

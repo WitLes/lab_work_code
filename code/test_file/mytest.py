@@ -16,5 +16,5 @@ if __name__ == "__main__":
 	for i in range(len(sf)):
 		product.append(sf[i] * discrete_wtd[i])
 	scatter_wtd(discrete_wtd)
-	scatter_wtd(sf)s
+	scatter_wtd(sf)
 	scatter_wtd(product)
