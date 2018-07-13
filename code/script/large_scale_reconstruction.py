@@ -1,11 +1,10 @@
 from algorithm_realization.stn_reconstruction_lib import *
 
 
-node_number = 1500
+node_number = 100
 link_probability = 0.005
 pop_percent = 7
-demo_graph, node_number, edge_number = er_graph_generator(node_number=node_number,link_probability=link_probability)
-
+demo_graph, node_number, edge_number = networkx_graph_generator(mode="BA")
 print("ER  ", "graph || nodes:", node_number, "; edges:", edge_number)
 print("average shortest path length: ", nx.average_shortest_path_length(demo_graph))
 print("average clustering coef: ", nx.average_clustering(demo_graph))
@@ -49,7 +48,7 @@ for k in range(10):
         print(".",end='',flush=True)
         for cutting in cutting_index_list:
             f1_list.append(large_scale_network_reconstruction_for_script(node_number=node_number,link_probability=link_probability,C=c,cutting_index=cutting))
-        if max(f1_list) > 0.95:
+        if max(f1_list) > 0.9:
             final_c = c
             break
     final_c_list.append(final_c)

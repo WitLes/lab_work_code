@@ -8,11 +8,11 @@ import math
 
 def networkx_graph_generator(mode="ER"):
     if mode == "ER":
-        return er_graph_generator(node_number=100,link_probability=0.06,seed=None,directed=False)
+        return er_graph_generator(node_number=200,link_probability=0.04,seed=None,directed=False)
     if mode == "BA":
-        return ba_graph_generator(n=100,m=3,seed=None,directed=False)
-    if mode =="SW":
-        return sw_graph_generator(n=100,k=6,p=0.05,seed=None,directed=False)
+        return ba_graph_generator(n=200,m=2,seed=None,directed=False)
+    if mode =="WS":
+        return sw_graph_generator(n=200,k=6,p=0.04,seed=None,directed=False)
 
 
 def ba_graph_generator(n=100,m=3,seed=None,directed=False):
