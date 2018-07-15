@@ -1,18 +1,18 @@
 from algorithm_realization.stn_reconstruction_lib import *
 import scipy.interpolate as interpolate
-
+C = 1
 mode_list = ["ER","BA","SW"]
-mode_select = mode_list[2]
+mode_select = 0
 distribution_list = ["gaussian","uniform","weibull", "gumbel","exponential","beta"]
-
-demo_graph, node_number, edge_number = networkx_graph_generator(mode=mode_select)
+distribution_select = 0
+demo_graph, node_number, edge_number = networkx_graph_generator(mode=mode_list[mode_select])
 plt.figure(figsize=(12, 8))
 plt.style.use("ggplot")
 plt.xlabel("time interval", fontsize=10)
 plt.ylabel("probability", fontsize=10)
 for distribution_select in range(len(distribution_list)):
 
-    dats, dat_path = dats_generator(demo_graph, mode=distribution_list[distribution_select], dat_number=10*node_number, seed=False)
+    dats, dat_path = dats_generator(demo_graph, mode=distribution_list[distribution_select], dat_number=C*node_number, seed=False)
     l_t = 5
     delta = 0.01
     all_edge_duv_time_list = list()
@@ -55,7 +55,7 @@ for distribution_select in range(len(distribution_list)):
     plt.plot(nx, original_sf, '-', label="distribution")
     #plt.legend(fontsize=10)
 plt.subplots_adjust(top=0.8,wspace=0.3)
-plt.savefig("../figure/"+mode_select+"_"+distribution_list[distribution_select]+ "_pdf_sf.svg", format="svg")
-plt.savefig("../figure/"+mode_select+"_"+distribution_list[distribution_select]+"_pdf_sf.jpg", dpi=600, format="jpg")
-plt.savefig("../figure/"+mode_select+"_"+distribution_list[distribution_select]+"_pdf_sf.eps", format="eps")
+plt.savefig("../figure/"+mode_list[mode_select]+"_"+distribution_list[distribution_select]+ "_pdf_sf.svg", format="svg")
+plt.savefig("../figure/"+mode_list[mode_select]+"_"+distribution_list[distribution_select]+"_pdf_sf.png", dpi=600, format="png")
+plt.savefig("../figure/"+mode_list[mode_select]+"_"+distribution_list[distribution_select]+"_pdf_sf.eps", format="eps")
 plt.show()
